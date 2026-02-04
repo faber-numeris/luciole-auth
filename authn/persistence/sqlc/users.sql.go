@@ -135,7 +135,7 @@ const listUsers = `-- name: ListUsers :many
      AND ($2::TEXT IS NULL OR email = $2)
      AND ($3::TIMESTAMP IS NULL OR created_at >= $3::TIMESTAMP)
      AND ($4::TIMESTAMP IS NULL OR created_at <= $4::TIMESTAMP)
-     AND ($5::BOOLEAN AND deleted_at IS NULL)
+     AND (deleted_at is null) = $5::BOOLEAN
 `
 
 type ListUsersParams struct {
