@@ -38,7 +38,7 @@ SELECT *
      AND (sqlc.narg('email')::TEXT IS NULL OR email = sqlc.narg('email'))
      AND (sqlc.narg('created_start_range')::TIMESTAMP IS NULL OR created_at >= sqlc.narg('created_start_range')::TIMESTAMP)
      AND (sqlc.narg('created_end_range')::TIMESTAMP IS NULL OR created_at <= sqlc.narg('created_end_range')::TIMESTAMP)
-     AND (@active::BOOLEAN AND deleted_at IS NULL);
+     AND (deleted_at is null) = @active::BOOLEAN;
 
 -- name: CreateUser :one
 INSERT INTO users(username, email, password_hash)
