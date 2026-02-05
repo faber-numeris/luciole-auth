@@ -1,0 +1,27 @@
+name: "Create Issues from TODOs"
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  todo-to-issue:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create issues from TODO comments
+        uses: alstr/todo-to-issue-action@v4
+        with:
+          # Auto-assign issues to the person who created the TODO
+          AUTO_ASSIGN: true
+          # Close issues when TODO is removed
+          CLOSE_ISSUES: true
+          # Add labels to created issues
+          ISSUE_LABELS: "todo,automated"
