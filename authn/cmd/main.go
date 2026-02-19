@@ -20,10 +20,12 @@ func main() {
 
 	conf := di.ProvideConfiguration()
 	router, err := di.ProvideRouter()
+	// TODO: (rafaelsousa) create the Must function to deal with require or die constraints
 	if err != nil {
 		panic(err)
 	}
 
+	// Give log levels different colors.
 	slog.SetDefault(slog.New(
 		tint.NewHandler(os.Stderr, &tint.Options{
 			Level:      slog.LevelDebug,
@@ -39,28 +41,38 @@ func main() {
 		Handler: router,
 	}
 
+	// TODO (rafaelsousa): put this into a separate component called app that we'll be called from main.go
+	srvErrChan := make(chan error, 1)
 	go func() {
-		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			panic(err)
+		if srvErr := srv.ListenAndServe(); srvErr != nil && !errors.Is(srvErr, http.ErrServerClosed) {
+			srvErrChan <- err
 		}
 	}()
 
+	// Gracefully stops the server on CTRL + C actions.
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
-	<-quit
 
-	slog.Info("Shutting down server...")
+	select {
+	case err := <-srvErrChan:
+		if err != nil {
+			slog.Error("Error starting server", "error", err)
+		}
+	case <-quit:
+		slog.Info("Shutting down server...")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-	defer cancel()
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
 
-	if err := srv.Shutdown(ctx); err != nil {
-		slog.Error("Server forced to shutdown", "error", err)
+		if err := srv.Shutdown(ctx); err != nil {
+			slog.Error("Server forced to shutdown", "error", err)
+		}
+
+		if err := database.Close(); err != nil {
+			slog.Error("Failed to close database", "error", err)
+		}
+
+		slog.Info("Server exited")
 	}
 
-	if err := database.Close(); err != nil {
-		slog.Error("Failed to close database", "error", err)
-	}
-
-	slog.Info("Server exited")
 }
