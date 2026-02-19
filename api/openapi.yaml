@@ -334,14 +334,24 @@ components:
       description: Opaque authentication token
 
   schemas:
+    ULID:
+      type: string
+      pattern: '^[0-7][0-9A-HJKMNP-TV-Z]{25}$'
+      description: ULID (Universally Unique Lexicographically Sortable Identifier)
+      example: "01H8R5X7X9Y2Z4W6V8T0S1Q2R"
     RegisterRequest:
       type: object
       required:
+        - username
         - email
         - password
-        - firstName
-        - lastName
       properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 50
+          description: User's unique username
+          example: johndoe
         email:
           type: string
           format: email
@@ -353,23 +363,6 @@ components:
           minLength: 8
           description: User's password (minimum 8 characters)
           example: SecurePass123!
-        firstName:
-          type: string
-          minLength: 1
-          maxLength: 50
-          description: User's first name
-          example: John
-        lastName:
-          type: string
-          minLength: 1
-          maxLength: 50
-          description: User's last name
-          example: Doe
-        phoneNumber:
-          type: string
-          pattern: '^\+?[1-9]\d{1,14}$'
-          description: User's phone number (E.164 format)
-          example: "+1234567890"
 
     LoginRequest:
       type: object
@@ -421,10 +414,7 @@ components:
         - createdAt
       properties:
         id:
-          type: string
-          format: uuid
-          description: User's unique identifier
-          example: 123e4567-e89b-12d3-a456-426614174000
+          $ref: '#/components/schemas/ULID'
         email:
           type: string
           format: email
@@ -487,10 +477,7 @@ components:
         - updatedAt
       properties:
         id:
-          type: string
-          format: uuid
-          description: User's unique identifier
-          example: 123e4567-e89b-12d3-a456-426614174000
+          $ref: '#/components/schemas/ULID'
         email:
           type: string
           format: email

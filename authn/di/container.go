@@ -9,8 +9,12 @@ import (
 	"github.com/faber-numeris/luciole-auth/authn/configuration"
 	"github.com/faber-numeris/luciole-auth/authn/handlers"
 	"github.com/faber-numeris/luciole-auth/authn/persistence/database"
+	"github.com/faber-numeris/luciole-auth/authn/persistence/repository"
+	sqlc2 "github.com/faber-numeris/luciole-auth/authn/persistence/sqlc"
+	"github.com/faber-numeris/luciole-auth/authn/service"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/go-chi/cors"
 	specui "github.com/oaswrap/spec-ui"
 )
 
@@ -22,8 +26,34 @@ func ProvideConfiguration() configuration.IAppConfig {
 	return cfg
 }
 
+func ProvideDatabase() (*database.DB, error) {
+	return database.GetInstance(ProvideConfiguration())
+}
+
+func ProvideUserRepository() repository.IUserRepository {
+	db, err := ProvideDatabase()
+	if err != nil {
+		if db != nil {
+			_ = db.Close()
+		}
+		panic(err)
+	}
+
+	sqlc := sqlc2.New(db.Pool)
+
+	repo := repository.NewSQLCUserRepository(sqlc)
+
+	return repo
+}
+
+func ProvideUserService() service.IUserService {
+
+	return service.NewUserService(ProvideUserRepository())
+}
+
 func ProvideAuthnService() handlers.IAuthnService {
-	srv := handlers.NewAuthnService()
+	userService := ProvideUserService()
+	srv := handlers.NewAuthnService(userService)
 	return srv
 }
 
@@ -52,6 +82,14 @@ func ProvideRouter() (http.Handler, error) {
 
 	mux := chi.NewRouter()
 
+	mux.Use(cors.Handler(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:*", "https://*"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-Requested-With"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: true,
+		MaxAge:           300,
+	}))
 	mux.Use(middleware.Logger)
 	mux.Use(middleware.Recoverer)
 	mux.Get(specuiHandler.DocsPath(), specuiHandler.DocsFunc())
@@ -80,9 +118,4 @@ func ProvideRouter() (http.Handler, error) {
 		return nil, fmt.Errorf("failed to walk routes: %w", err)
 	}
 	return mux, nil
-}
-
-func ProvideDatabase() (*database.DB, error) {
-	cfg := ProvideConfiguration()
-	return database.NewConnection(cfg)
 }

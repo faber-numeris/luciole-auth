@@ -8,6 +8,12 @@ import (
 
 // Handler handles operations described by OpenAPI v3 specification.
 type Handler interface {
+	// ConfirmUserRegistration implements confirmUserRegistration operation.
+	//
+	// Confirms a user's email address using a confirmation token.
+	//
+	// GET /authn/confirm
+	ConfirmUserRegistration(ctx context.Context, params ConfirmUserRegistrationParams) (ConfirmUserRegistrationRes, error)
 	// GetUserProfile implements getUserProfile operation.
 	//
 	// Retrieves the authenticated user's profile information.

@@ -6,11 +6,12 @@ package api
 type OperationName = string
 
 const (
-	GetUserProfileOperation       OperationName = "GetUserProfile"
-	LoginUserOperation            OperationName = "LoginUser"
-	LogoutUserOperation           OperationName = "LogoutUser"
-	RegisterUserOperation         OperationName = "RegisterUser"
-	RequestPasswordResetOperation OperationName = "RequestPasswordReset"
-	ResetPasswordOperation        OperationName = "ResetPassword"
-	UpdateUserProfileOperation    OperationName = "UpdateUserProfile"
+	ConfirmUserRegistrationOperation OperationName = "ConfirmUserRegistration"
+	GetUserProfileOperation          OperationName = "GetUserProfile"
+	LoginUserOperation               OperationName = "LoginUser"
+	LogoutUserOperation              OperationName = "LogoutUser"
+	RegisterUserOperation            OperationName = "RegisterUser"
+	RequestPasswordResetOperation    OperationName = "RequestPasswordReset"
+	ResetPasswordOperation           OperationName = "ResetPassword"
+	UpdateUserProfileOperation       OperationName = "UpdateUserProfile"
 )

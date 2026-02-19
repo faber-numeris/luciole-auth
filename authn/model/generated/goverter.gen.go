@@ -6,6 +6,8 @@ package generated
 import (
 	gen "github.com/faber-numeris/luciole-auth/api/gen"
 	model "github.com/faber-numeris/luciole-auth/authn/model"
+	sqlc "github.com/faber-numeris/luciole-auth/authn/persistence/sqlc"
+	"time"
 )
 
 type ConverterImpl struct{}
@@ -15,4 +17,37 @@ func (c *ConverterImpl) RegisterRequestToUserModel(source gen.RegisterRequest) (
 	modelUser.Username = source.Username
 	modelUser.Email = source.Email
 	return &modelUser, nil
+}
+func (c *ConverterImpl) SQLCUserToUser(source sqlc.User) (*model.User, error) {
+	var modelUser model.User
+	modelUser.ID = source.ID
+	modelUser.Username = source.Username
+	modelUser.Email = source.Email
+	modelUser.CreatedAt = c.pTimeTimeToTimeTime(source.CreatedAt)
+	return &modelUser, nil
+}
+func (c *ConverterImpl) UserToRegisterUserRes(source model.User) (*gen.UserResponse, error) {
+	var apiUserResponse gen.UserResponse
+	apiULID, err := model.StringToULID(source.ID)
+	if err != nil {
+		return nil, err
+	}
+	apiUserResponse.ID = apiULID
+	apiUserResponse.Email = source.Email
+	apiUserResponse.FirstName = source.FirstName
+	apiUserResponse.LastName = source.LastName
+	apiOptString, err := model.StringToOptString(source.PhoneNumber)
+	if err != nil {
+		return nil, err
+	}
+	apiUserResponse.PhoneNumber = apiOptString
+	apiUserResponse.CreatedAt = source.CreatedAt
+	return &apiUserResponse, nil
+}
+func (c *ConverterImpl) pTimeTimeToTimeTime(source *time.Time) time.Time {
+	var timeTime time.Time
+	if source != nil {
+		timeTime = (*source)
+	}
+	return timeTime
 }

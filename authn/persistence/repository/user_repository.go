@@ -6,8 +6,8 @@ import (
 	"github.com/faber-numeris/luciole-auth/authn/model"
 )
 
-// UserRepository defines the interface for user data operations
-type UserRepository interface {
+// IUserRepository defines the interface for user data operations
+type IUserRepository interface {
 	// CreateUser creates a new user in the database
 	CreateUser(ctx context.Context, user *model.User, passwordHash string) (*model.User, error)
 

@@ -13,6 +13,15 @@ type UnimplementedHandler struct{}
 
 var _ Handler = UnimplementedHandler{}
 
+// ConfirmUserRegistration implements confirmUserRegistration operation.
+//
+// Confirms a user's email address using a confirmation token.
+//
+// GET /authn/confirm
+func (UnimplementedHandler) ConfirmUserRegistration(ctx context.Context, params ConfirmUserRegistrationParams) (r ConfirmUserRegistrationRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // GetUserProfile implements getUserProfile operation.
 //
 // Retrieves the authenticated user's profile information.
