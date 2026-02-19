@@ -77,6 +77,8 @@ func ProvideRouter() (http.Handler, error) {
 
 	mux := chi.NewRouter()
 
+	// TODO: CORS allows all HTTPS origins which is overly permissive - should use environment-based allowed origins
+	// assignees: rafaelsousa
 	mux.Use(cors.Handler(cors.Options{
 		AllowedOrigins:   []string{"http://localhost:*", "https://*"},
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},

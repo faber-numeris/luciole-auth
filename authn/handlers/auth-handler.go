@@ -14,21 +14,29 @@ type AuthnService struct {
 	userService service.IUserService
 }
 
+// TODO: Implement ConfirmUserRegistration method
+// assignees: rafaelsousa
 func (a *AuthnService) ConfirmUserRegistration(ctx context.Context, params api.ConfirmUserRegistrationParams) (api.ConfirmUserRegistrationRes, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
+// TODO: Implement GetUserProfile method
+// assignees: rafaelsousa
 func (a *AuthnService) GetUserProfile(ctx context.Context) (api.GetUserProfileRes, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
+// TODO: Implement LoginUser method
+// assignees: rafaelsousa
 func (a *AuthnService) LoginUser(ctx context.Context, req *api.LoginRequest) (api.LoginUserRes, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
+// TODO: Implement LogoutUser method
+// assignees: rafaelsousa
 func (a *AuthnService) LogoutUser(ctx context.Context) (api.LogoutUserRes, error) {
 	//TODO implement me
 	panic("implement me")
@@ -72,16 +80,22 @@ func (a *AuthnService) RegisterUser(ctx context.Context, req *api.RegisterReques
 
 }
 
+// TODO: Implement RequestPasswordReset method
+// assignees: rafaelsousa
 func (a *AuthnService) RequestPasswordReset(ctx context.Context, req *api.PasswordResetRequest) (api.RequestPasswordResetRes, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
+// TODO: Implement ResetPassword method
+// assignees: rafaelsousa
 func (a *AuthnService) ResetPassword(ctx context.Context, req *api.PasswordResetConfirm) (api.ResetPasswordRes, error) {
 	//TODO implement me
 	panic("implement me")
 }
 
+// TODO: Implement UpdateUserProfile method
+// assignees: rafaelsousa
 func (a *AuthnService) UpdateUserProfile(ctx context.Context, req *api.ProfileUpdateRequest) (api.UpdateUserProfileRes, error) {
 	//TODO implement me
 	panic("implement me")
