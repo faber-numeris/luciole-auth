@@ -7,8 +7,8 @@ import (
 
 	api "github.com/faber-numeris/luciole-auth/api/gen"
 	"github.com/faber-numeris/luciole-auth/authn/configuration"
+	"github.com/faber-numeris/luciole-auth/authn/handlers"
 	"github.com/faber-numeris/luciole-auth/authn/persistence/database"
-	"github.com/faber-numeris/luciole-auth/authn/service"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	specui "github.com/oaswrap/spec-ui"
@@ -22,13 +22,13 @@ func ProvideConfiguration() configuration.IAppConfig {
 	return cfg
 }
 
-func ProvideAuthnService() service.IAuthnService {
-	srv := service.NewAuthnService()
+func ProvideAuthnService() handlers.IAuthnService {
+	srv := handlers.NewAuthnService()
 	return srv
 }
 
-func ProvideSecurityService() service.ISecurityService {
-	srv := service.NewSecurityService()
+func ProvideSecurityService() handlers.ISecurityService {
+	srv := handlers.NewSecurityService()
 	return srv
 }
 func ProvideHandler() (http.Handler, error) {
