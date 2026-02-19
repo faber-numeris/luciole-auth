@@ -23,6 +23,7 @@ func (s SecurityService) HandleBearerAuth(
 	t api.BearerAuth,
 ) (context.Context, error) {
 	slog.Info("Bearer auth received", "operation", operationName, "token", t.Token)
-	// TODO:  validate the token and possibly add user info to the context.
+	// TODO: Validate the token and possibly add user info to the context
+	// assignees: rafaelsousa
 	return ctx, nil
 }

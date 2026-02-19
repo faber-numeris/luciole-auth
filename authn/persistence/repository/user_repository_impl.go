@@ -27,7 +27,8 @@ var converter = &generated.ConverterImpl{}
 
 // CreateUser creates a new user in the database
 func (r *SQLCUserRepository) CreateUser(ctx context.Context, user *model.User, passwordHash string) (*model.User, error) {
-	// TODO: (rafaelsousa) leverage goverter
+	// TODO: Leverage goverter for CreateUser
+	// assignees: rafaelsousa
 	createParams := sqlc.CreateUserParams{
 		Username:     user.Username,
 		Email:        user.Email,
@@ -101,7 +102,8 @@ func (r *SQLCUserRepository) GetUserByEmail(ctx context.Context, email string) (
 
 // UpdateUser updates an existing user
 func (r *SQLCUserRepository) UpdateUser(ctx context.Context, user *model.User) error {
-	// TODO: (rafaelsousa) leverage goverter
+	// TODO: PasswordHash is set to empty byte slice when updating user, which will clear the password
+	// assignees: rafaelsousa
 	updateParams := sqlc.UpdateUserParams{
 		ID:           user.ID,
 		Username:     user.Username,
@@ -120,7 +122,8 @@ func (r *SQLCUserRepository) DeleteUser(ctx context.Context, id string) error {
 
 // ListUsers retrieves a list of users with optional filtering
 func (r *SQLCUserRepository) ListUsers(ctx context.Context, params *ListUsersParams) ([]*model.User, error) {
-	// TODO: (rafaelsousa) leverage goverter
+	// TODO: Leverage goverter for ListUsers
+	// assignees: rafaelsousa
 	sqlcParams := sqlc.ListUsersParams{
 		Active: params.Active,
 	}
@@ -131,6 +134,8 @@ func (r *SQLCUserRepository) ListUsers(ctx context.Context, params *ListUsersPar
 	if params.Email != nil {
 		sqlcParams.Email = params.Email
 	}
+	// TODO: Silent error handling when parsing date range parameters - errors are ignored
+	// assignees: rafaelsousa
 	if params.CreatedStartRange != nil {
 		if parsedTime, err := time.Parse(time.RFC3339, *params.CreatedStartRange); err == nil {
 			sqlcParams.CreatedStartRange = &parsedTime

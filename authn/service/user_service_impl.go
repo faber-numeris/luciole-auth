@@ -43,36 +43,49 @@ func (s *UserServiceImpl) RegisterUser(ctx context.Context, user *model.User) (*
 }
 
 // GetUserByID retrieves a user by their ID
+// TODO: Implement GetUserByID method
+// assignees: rafaelsousa
 func (s *UserServiceImpl) GetUserByID(ctx context.Context, id string) (*model.User, error) {
 	panic("not implemented")
 }
 
 // GetUserByUsername retrieves a user by their username
+// TODO: Implement GetUserByUsername method
+// assignees: rafaelsousa
 func (s *UserServiceImpl) GetUserByUsername(ctx context.Context, username string) (*model.User, error) {
 	panic("not implemented")
 }
 
 // GetUserByEmail retrieves a user by their email
+// TODO: Implement GetUserByEmail method
+// assignees: rafaelsousa
 func (s *UserServiceImpl) GetUserByEmail(ctx context.Context, email string) (*model.User, error) {
 	panic("not implemented")
 }
 
 // UpdateUserProfile updates an existing user's profile
+// TODO: Implement UpdateUserProfile method
+// assignees: rafaelsousa
 func (s *UserServiceImpl) UpdateUserProfile(ctx context.Context, userID string, req *model.User) (*model.User, error) {
 	panic("not implemented")
 }
 
 // DeleteUser deactivates a user account
+// TODO: Implement DeleteUser method
+// assignees: rafaelsousa
 func (s *UserServiceImpl) DeleteUser(ctx context.Context, userID string) error {
 	panic("not implemented")
 }
 
 // ListUsers retrieves a list of users with optional filtering
+// TODO: Implement ListUsers method
+// assignees: rafaelsousa
 func (s *UserServiceImpl) ListUsers(ctx context.Context, params *ListUsersParams) ([]*model.User, error) {
 	panic("not implemented")
 }
 
-// TODO: (rafaelsousa) move hashpassword to its own service and inject it via DI
+// TODO: Move hashpassword to its own service and inject it via DI
+// assignees: rafaelsousa
 func (s *UserServiceImpl) hashPassword(password string) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
