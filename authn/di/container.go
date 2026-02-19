@@ -26,12 +26,9 @@ func ProvideConfiguration() configuration.IAppConfig {
 	return cfg
 }
 
-func ProvideDatabase() (*database.DB, error) {
-	return database.GetInstance(ProvideConfiguration())
-}
-
 func ProvideUserRepository() repository.IUserRepository {
-	db, err := ProvideDatabase()
+	// Get Database Singleton
+	db, err := database.GetInstance(ProvideConfiguration())
 	if err != nil {
 		if db != nil {
 			_ = db.Close()
@@ -39,9 +36,7 @@ func ProvideUserRepository() repository.IUserRepository {
 		panic(err)
 	}
 
-	sqlc := sqlc2.New(db.Pool)
-
-	repo := repository.NewSQLCUserRepository(sqlc)
+	repo := repository.NewSQLCUserRepository(sqlc2.New(db.Pool))
 
 	return repo
 }
