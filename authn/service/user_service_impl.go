@@ -72,7 +72,7 @@ func (s *UserServiceImpl) ListUsers(ctx context.Context, params *ListUsersParams
 	panic("not implemented")
 }
 
-// hashPassword hashes a password using bcrypt
+// TODO: (rafaelsousa) move hashpassword to its own service and inject it via DI
 func (s *UserServiceImpl) hashPassword(password string) (string, error) {
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {

@@ -27,7 +27,7 @@ var converter = &generated.ConverterImpl{}
 
 // CreateUser creates a new user in the database
 func (r *SQLCUserRepository) CreateUser(ctx context.Context, user *model.User, passwordHash string) (*model.User, error) {
-	// Convert domain model to sqlc parameter
+	// TODO: (rafaelsousa) leverage goverter
 	createParams := sqlc.CreateUserParams{
 		Username:     user.Username,
 		Email:        user.Email,
@@ -52,7 +52,7 @@ func (r *SQLCUserRepository) CreateUser(ctx context.Context, user *model.User, p
 func (r *SQLCUserRepository) GetUserByID(ctx context.Context, id string) (*model.User, error) {
 	sqlcUser, err := r.querier.GetUser(ctx, id)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil // User not found
 		}
 		return nil, err
@@ -101,7 +101,7 @@ func (r *SQLCUserRepository) GetUserByEmail(ctx context.Context, email string) (
 
 // UpdateUser updates an existing user
 func (r *SQLCUserRepository) UpdateUser(ctx context.Context, user *model.User) error {
-	// Convert domain model to sqlc parameter
+	// TODO: (rafaelsousa) leverage goverter
 	updateParams := sqlc.UpdateUserParams{
 		ID:           user.ID,
 		Username:     user.Username,
@@ -120,7 +120,7 @@ func (r *SQLCUserRepository) DeleteUser(ctx context.Context, id string) error {
 
 // ListUsers retrieves a list of users with optional filtering
 func (r *SQLCUserRepository) ListUsers(ctx context.Context, params *ListUsersParams) ([]*model.User, error) {
-	// Convert domain parameters to sqlc parameters
+	// TODO: (rafaelsousa) leverage goverter
 	sqlcParams := sqlc.ListUsersParams{
 		Active: params.Active,
 	}

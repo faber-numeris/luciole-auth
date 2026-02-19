@@ -20,6 +20,7 @@ func main() {
 
 	conf := di.ProvideConfiguration()
 	router, err := di.ProvideRouter()
+	// TODO: (rafaelsousa) create the Must function to deal with require or die constraints
 	if err != nil {
 		panic(err)
 	}
@@ -40,6 +41,7 @@ func main() {
 		Handler: router,
 	}
 
+	// TODO (rafaelsousa): put this into a separate component called app that we'll be called from main.go
 	srvErrChan := make(chan error, 1)
 	go func() {
 		if srvErr := srv.ListenAndServe(); srvErr != nil && !errors.Is(srvErr, http.ErrServerClosed) {

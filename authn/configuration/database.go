@@ -13,7 +13,7 @@ var _ IDatabaseConfig = (*DatabaseConfig)(nil)
 
 type DatabaseConfig struct {
 	DBHost_     string `env:"DB_HOST,required"`
-	DBPort_     int    `env:"DB_PORT,required"`
+	DBPort_     int    `env:"DB_PORT" envDefault:"5432"`
 	DBUser_     string `env:"DB_USER,required"`
 	DBPassword_ string `env:"DB_PASSWORD,required"`
 	DBDBName_   string `env:"DB_NAME,required"`
