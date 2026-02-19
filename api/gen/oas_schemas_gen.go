@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/go-faster/jx"
-	"github.com/google/uuid"
 )
 
 type BearerAuth struct {
@@ -34,6 +33,18 @@ func (s *BearerAuth) SetToken(val string) {
 func (s *BearerAuth) SetRoles(val []string) {
 	s.Roles = val
 }
+
+type ConfirmUserRegistrationBadRequest Error
+
+func (*ConfirmUserRegistrationBadRequest) confirmUserRegistrationRes() {}
+
+type ConfirmUserRegistrationGone Error
+
+func (*ConfirmUserRegistrationGone) confirmUserRegistrationRes() {}
+
+type ConfirmUserRegistrationInternalServerError Error
+
+func (*ConfirmUserRegistrationInternalServerError) confirmUserRegistrationRes() {}
 
 // Ref: #/components/schemas/Error
 type Error struct {
@@ -217,8 +228,9 @@ func (s *MessageResponse) SetMessage(val string) {
 	s.Message = val
 }
 
-func (*MessageResponse) requestPasswordResetRes() {}
-func (*MessageResponse) resetPasswordRes()        {}
+func (*MessageResponse) confirmUserRegistrationRes() {}
+func (*MessageResponse) requestPasswordResetRes()    {}
+func (*MessageResponse) resetPasswordRes()           {}
 
 // NewOptErrorDetails returns new OptErrorDetails with value set to v.
 func NewOptErrorDetails(v ErrorDetails) OptErrorDetails {
@@ -404,8 +416,7 @@ func (s *PasswordResetRequest) SetEmail(val string) {
 
 // Ref: #/components/schemas/ProfileResponse
 type ProfileResponse struct {
-	// User's unique identifier.
-	ID uuid.UUID `json:"id"`
+	ID ULID `json:"id"`
 	// User's email address.
 	Email string `json:"email"`
 	// User's first name.
@@ -425,7 +436,7 @@ type ProfileResponse struct {
 }
 
 // GetID returns the value of ID.
-func (s *ProfileResponse) GetID() uuid.UUID {
+func (s *ProfileResponse) GetID() ULID {
 	return s.ID
 }
 
@@ -470,7 +481,7 @@ func (s *ProfileResponse) GetUpdatedAt() time.Time {
 }
 
 // SetID sets the value of ID.
-func (s *ProfileResponse) SetID(val uuid.UUID) {
+func (s *ProfileResponse) SetID(val ULID) {
 	s.ID = val
 }
 
@@ -595,16 +606,17 @@ func (s *ProfileUpdateRequest) SetAvatarUrl(val OptURI) {
 
 // Ref: #/components/schemas/RegisterRequest
 type RegisterRequest struct {
+	// User's unique username.
+	Username string `json:"username"`
 	// User's email address.
 	Email string `json:"email"`
 	// User's password (minimum 8 characters).
 	Password string `json:"password"`
-	// User's first name.
-	FirstName string `json:"firstName"`
-	// User's last name.
-	LastName string `json:"lastName"`
-	// User's phone number (E.164 format).
-	PhoneNumber OptString `json:"phoneNumber"`
+}
+
+// GetUsername returns the value of Username.
+func (s *RegisterRequest) GetUsername() string {
+	return s.Username
 }
 
 // GetEmail returns the value of Email.
@@ -617,19 +629,9 @@ func (s *RegisterRequest) GetPassword() string {
 	return s.Password
 }
 
-// GetFirstName returns the value of FirstName.
-func (s *RegisterRequest) GetFirstName() string {
-	return s.FirstName
-}
-
-// GetLastName returns the value of LastName.
-func (s *RegisterRequest) GetLastName() string {
-	return s.LastName
-}
-
-// GetPhoneNumber returns the value of PhoneNumber.
-func (s *RegisterRequest) GetPhoneNumber() OptString {
-	return s.PhoneNumber
+// SetUsername sets the value of Username.
+func (s *RegisterRequest) SetUsername(val string) {
+	s.Username = val
 }
 
 // SetEmail sets the value of Email.
@@ -640,21 +642,6 @@ func (s *RegisterRequest) SetEmail(val string) {
 // SetPassword sets the value of Password.
 func (s *RegisterRequest) SetPassword(val string) {
 	s.Password = val
-}
-
-// SetFirstName sets the value of FirstName.
-func (s *RegisterRequest) SetFirstName(val string) {
-	s.FirstName = val
-}
-
-// SetLastName sets the value of LastName.
-func (s *RegisterRequest) SetLastName(val string) {
-	s.LastName = val
-}
-
-// SetPhoneNumber sets the value of PhoneNumber.
-func (s *RegisterRequest) SetPhoneNumber(val OptString) {
-	s.PhoneNumber = val
 }
 
 type RegisterUserBadRequest Error
@@ -697,6 +684,8 @@ type ResetPasswordInternalServerError Error
 
 func (*ResetPasswordInternalServerError) resetPasswordRes() {}
 
+type ULID string
+
 type UpdateUserProfileBadRequest Error
 
 func (*UpdateUserProfileBadRequest) updateUserProfileRes() {}
@@ -715,8 +704,7 @@ func (*UpdateUserProfileUnauthorized) updateUserProfileRes() {}
 
 // Ref: #/components/schemas/UserResponse
 type UserResponse struct {
-	// User's unique identifier.
-	ID uuid.UUID `json:"id"`
+	ID ULID `json:"id"`
 	// User's email address.
 	Email string `json:"email"`
 	// User's first name.
@@ -730,7 +718,7 @@ type UserResponse struct {
 }
 
 // GetID returns the value of ID.
-func (s *UserResponse) GetID() uuid.UUID {
+func (s *UserResponse) GetID() ULID {
 	return s.ID
 }
 
@@ -760,7 +748,7 @@ func (s *UserResponse) GetCreatedAt() time.Time {
 }
 
 // SetID sets the value of ID.
-func (s *UserResponse) SetID(val uuid.UUID) {
+func (s *UserResponse) SetID(val ULID) {
 	s.ID = val
 }
 

@@ -6,10 +6,10 @@ import (
 	"github.com/faber-numeris/luciole-auth/authn/model"
 )
 
-// UserService defines the interface for user business logic operations
-type UserService interface {
+// IUserService defines the interface for user business logic operations
+type IUserService interface {
 	// RegisterUser creates a new user account
-	RegisterUser(ctx context.Context, user model.User) (*model.User, error)
+	RegisterUser(ctx context.Context, req *model.User) (*model.User, error)
 
 	// GetUserByID retrieves a user by their ID
 	GetUserByID(ctx context.Context, id string) (*model.User, error)

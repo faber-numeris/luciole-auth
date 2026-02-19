@@ -2,19 +2,43 @@ package database
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/faber-numeris/luciole-auth/authn/configuration"
+	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/lib/pq"
 )
 
+var (
+	instOnce sync.Once
+	dbInst   *DB
+	dbErr    error
+)
+
 type DB struct {
-	*sql.DB
+	*pgxpool.Pool
 }
 
-func NewConnection(cfg configuration.IDatabaseConfig) (*DB, error) {
+func GetInstance(cfg configuration.IDatabaseConfig) (*DB, error) {
+	instOnce.Do(func() {
+		dbInst, dbErr = newConnection(cfg)
+	})
+	return dbInst, dbErr
+}
+
+func Close() error {
+	if dbInst != nil {
+		dbInst.Pool.Close()
+		dbInst = nil
+	}
+	return nil
+}
+
+func newConnection(cfg configuration.IDatabaseConfig) (*DB, error) {
+	ctx := context.Background()
+
 	dsn := fmt.Sprintf(
 		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
 		cfg.DBHost(),
@@ -25,31 +49,37 @@ func NewConnection(cfg configuration.IDatabaseConfig) (*DB, error) {
 		cfg.DBSSLMode(),
 	)
 
-	db, err := sql.Open("postgres", dsn)
+	poolCfg, err := pgxpool.ParseConfig(dsn)
 	if err != nil {
-		return nil, fmt.Errorf("failed to open database connection: %w", err)
+		return nil, fmt.Errorf("parse config: %w", err)
 	}
 
-	// Set connection pool settings
-	db.SetMaxOpenConns(25)
-	db.SetMaxIdleConns(5)
-	db.SetConnMaxLifetime(5 * time.Minute)
+	poolCfg.MaxConns = 10
+	poolCfg.MinConns = 2
+	poolCfg.MaxConnLifetime = time.Hour
+	poolCfg.MaxConnIdleTime = 30 * time.Minute
+	poolCfg.HealthCheckPeriod = time.Minute
 
-	// Verify connection
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	if err := db.PingContext(ctx); err != nil {
-		return nil, fmt.Errorf("failed to ping database: %w", err)
+	pool, err := pgxpool.NewWithConfig(ctx, poolCfg)
+	if err != nil {
+		return nil, fmt.Errorf("create Pool: %w", err)
 	}
 
-	return &DB{db}, nil
+	// Always verify connection at startup
+	if err := pool.Ping(ctx); err != nil {
+		pool.Close()
+		return nil, fmt.Errorf("ping db: %w", err)
+	}
+
+	return &DB{pool}, nil
 }
 
 func (db *DB) Close() error {
-	return db.DB.Close()
+	db.Pool.Close()
+
+	return nil
 }
 
 func (db *DB) Health(ctx context.Context) error {
-	return db.PingContext(ctx)
+	return db.Pool.Ping(ctx)
 }

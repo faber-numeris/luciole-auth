@@ -5,13 +5,13 @@ import (
 
 	api "github.com/faber-numeris/luciole-auth/api/gen"
 	"github.com/faber-numeris/luciole-auth/authn/model/generated"
-	"github.com/faber-numeris/luciole-auth/authn/persistence/repository"
+	"github.com/faber-numeris/luciole-auth/authn/service"
 )
 
 type IAuthnService = api.Handler
 
 type AuthnService struct {
-	userRepository repository.UserRepository
+	userService service.IUserService
 }
 
 func (a *AuthnService) ConfirmUserRegistration(ctx context.Context, params api.ConfirmUserRegistrationParams) (api.ConfirmUserRegistrationRes, error) {
@@ -39,10 +39,36 @@ func (a *AuthnService) RegisterUser(ctx context.Context, req *api.RegisterReques
 
 	userModel, err := converter.RegisterRequestToUserModel(*req)
 	if err != nil {
-		return api.RegisterRequest{}, err
+		errorResponse := &api.RegisterUserBadRequest{
+			Error:   err.Error(),
+			Message: "Invalid Register User Data",
+			Details: api.OptErrorDetails{},
+		}
+
+		return errorResponse, err
 	}
 
-	a.userRepository.CreateUser(ctx, userModel)
+	userResponse, err := a.userService.RegisterUser(ctx, userModel)
+	if err != nil {
+		errorResponse := &api.RegisterUserInternalServerError{
+			Error:   err.Error(),
+			Message: "Could not register user. Please try again later.",
+			Details: api.OptErrorDetails{},
+		}
+		return errorResponse, err
+	}
+
+	apiUserResponse, err := converter.UserToRegisterUserRes(*userResponse)
+	if err != nil {
+		errorResponse := &api.RegisterUserInternalServerError{
+			Error:   err.Error(),
+			Message: "Could not process user response.",
+			Details: api.OptErrorDetails{},
+		}
+		return errorResponse, err
+	}
+
+	return apiUserResponse, nil
 
 }
 
@@ -61,6 +87,8 @@ func (a *AuthnService) UpdateUserProfile(ctx context.Context, req *api.ProfileUp
 	panic("implement me")
 }
 
-func NewAuthnService() IAuthnService {
-	return &AuthnService{}
+func NewAuthnService(userService service.IUserService) IAuthnService {
+	return &AuthnService{
+		userService: userService,
+	}
 }

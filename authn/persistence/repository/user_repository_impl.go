@@ -3,23 +3,27 @@ package repository
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"time"
 
 	"github.com/faber-numeris/luciole-auth/authn/model"
+	"github.com/faber-numeris/luciole-auth/authn/model/generated"
 	"github.com/faber-numeris/luciole-auth/authn/persistence/sqlc"
 )
 
-// SQLCUserRepository implements UserRepository using sqlc generated components
+// SQLCUserRepository implements IUserRepository using sqlc generated components
 type SQLCUserRepository struct {
 	querier sqlc.Querier
 }
 
 // NewSQLCUserRepository creates a new instance of SQLCUserRepository
-func NewSQLCUserRepository(querier sqlc.Querier) UserRepository {
+func NewSQLCUserRepository(querier sqlc.Querier) IUserRepository {
 	return &SQLCUserRepository{
 		querier: querier,
 	}
 }
+
+var converter = &generated.ConverterImpl{}
 
 // CreateUser creates a new user in the database
 func (r *SQLCUserRepository) CreateUser(ctx context.Context, user *model.User, passwordHash string) (*model.User, error) {
@@ -36,9 +40,11 @@ func (r *SQLCUserRepository) CreateUser(ctx context.Context, user *model.User, p
 		return nil, err
 	}
 
-	// Convert sqlc result back to domain model
-	result := &model.User{}
-	result.FromSQLC(sqlcUser)
+	// Convert sqlc result to domain model using goverter
+	result, err := converter.SQLCUserToUser(sqlcUser)
+	if err != nil {
+		return nil, err
+	}
 	return result, nil
 }
 
@@ -52,8 +58,10 @@ func (r *SQLCUserRepository) GetUserByID(ctx context.Context, id string) (*model
 		return nil, err
 	}
 
-	result := &model.User{}
-	result.FromSQLC(sqlcUser)
+	result, err := converter.SQLCUserToUser(sqlcUser)
+	if err != nil {
+		return nil, err
+	}
 	return result, nil
 }
 
@@ -61,14 +69,16 @@ func (r *SQLCUserRepository) GetUserByID(ctx context.Context, id string) (*model
 func (r *SQLCUserRepository) GetUserByUsername(ctx context.Context, username string) (*model.User, error) {
 	sqlcUser, err := r.querier.GetUserByUsername(ctx, username)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil // User not found
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
 		}
 		return nil, err
 	}
 
-	result := &model.User{}
-	result.FromSQLC(sqlcUser)
+	result, err := converter.SQLCUserToUser(sqlcUser)
+	if err != nil {
+		return nil, err
+	}
 	return result, nil
 }
 
@@ -76,14 +86,16 @@ func (r *SQLCUserRepository) GetUserByUsername(ctx context.Context, username str
 func (r *SQLCUserRepository) GetUserByEmail(ctx context.Context, email string) (*model.User, error) {
 	sqlcUser, err := r.querier.GetUserByEmail(ctx, email)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, nil // User not found
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
 		}
 		return nil, err
 	}
 
-	result := &model.User{}
-	result.FromSQLC(sqlcUser)
+	result, err := converter.SQLCUserToUser(sqlcUser)
+	if err != nil {
+		return nil, err
+	}
 	return result, nil
 }
 
@@ -138,8 +150,10 @@ func (r *SQLCUserRepository) ListUsers(ctx context.Context, params *ListUsersPar
 	// Convert sqlc results to domain models
 	result := make([]*model.User, len(sqlcUsers))
 	for i, sqlcUser := range sqlcUsers {
-		result[i] = &model.User{}
-		result[i].FromSQLC(sqlcUser)
+		result[i], err = converter.SQLCUserToUser(sqlcUser)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return result, nil
