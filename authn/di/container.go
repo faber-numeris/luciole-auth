@@ -41,9 +41,13 @@ func ProvideUserRepository() repository.IUserRepository {
 	return repo
 }
 
+func ProvideHashingService() service.IHashingService {
+	return service.NewHashingService()
+}
+
 func ProvideUserService() service.IUserService {
 
-	return service.NewUserService(ProvideUserRepository())
+	return service.NewUserService(ProvideUserRepository(), ProvideHashingService())
 }
 
 func ProvideAuthnService() handlers.IAuthnService {
