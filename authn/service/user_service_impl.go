@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"golang.org/x/crypto/bcrypt"
-
 	"github.com/faber-numeris/luciole-auth/authn/model"
 	"github.com/faber-numeris/luciole-auth/authn/model/generated"
 	"github.com/faber-numeris/luciole-auth/authn/persistence/repository"
@@ -13,27 +11,27 @@ import (
 
 // UserServiceImpl implements the IUserService interface
 type UserServiceImpl struct {
-	userRepo  repository.IUserRepository
-	converter *generated.ConverterImpl
+	userRepo       repository.IUserRepository
+	hashingService IHashingService
+	converter      *generated.ConverterImpl
 }
 
 // NewUserService creates a new instance of UserServiceImpl
-func NewUserService(userRepo repository.IUserRepository) IUserService {
+func NewUserService(userRepo repository.IUserRepository, hashingService IHashingService) IUserService {
 	return &UserServiceImpl{
-		userRepo:  userRepo,
-		converter: &generated.ConverterImpl{},
+		userRepo:       userRepo,
+		hashingService: hashingService,
+		converter:      &generated.ConverterImpl{},
 	}
 }
 
 // RegisterUser creates a new user account
 func (s *UserServiceImpl) RegisterUser(ctx context.Context, user *model.User) (*model.User, error) {
-	// Hash the password
-	passwordHash, err := s.hashPassword(user.Password)
+	passwordHash, err := s.hashingService.HashPassword(ctx, user.Password)
 	if err != nil {
 		return nil, fmt.Errorf("failed to hash password: %w", err)
 	}
 
-	// Create user in database
 	createdUser, err := s.userRepo.CreateUser(ctx, user, passwordHash)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create user: %w", err)
@@ -82,14 +80,4 @@ func (s *UserServiceImpl) DeleteUser(ctx context.Context, userID string) error {
 // assignees: rafaelsousa
 func (s *UserServiceImpl) ListUsers(ctx context.Context, params *ListUsersParams) ([]*model.User, error) {
 	panic("not implemented")
-}
-
-// TODO: Move hashpassword to its own service and inject it via DI
-// assignees: rafaelsousa
-func (s *UserServiceImpl) hashPassword(password string) (string, error) {
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
-	if err != nil {
-		return "", err
-	}
-	return string(hash), nil
 }
