@@ -11,25 +11,27 @@ import (
 )
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users(username, email, password_hash)
-     VALUES ($1::TEXT, $2::TEXT, $3::BYTEA)
-  RETURNING id, username, email, password_hash, created_at, updated_at, deleted_at
+INSERT INTO users(email, password_hash)
+     VALUES ($1::TEXT, $2::BYTEA)
+  RETURNING id, email, password_hash, first_name, last_name, locale, timezone, created_at, updated_at, deleted_at
 `
 
 type CreateUserParams struct {
-	Username     string
 	Email        string
 	PasswordHash []byte
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
-	row := q.db.QueryRow(ctx, createUser, arg.Username, arg.Email, arg.PasswordHash)
+	row := q.db.QueryRow(ctx, createUser, arg.Email, arg.PasswordHash)
 	var i User
 	err := row.Scan(
 		&i.ID,
-		&i.Username,
 		&i.Email,
 		&i.PasswordHash,
+		&i.FirstName,
+		&i.LastName,
+		&i.Locale,
+		&i.Timezone,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
@@ -50,9 +52,12 @@ func (q *Queries) DeleteUser(ctx context.Context, id string) error {
 
 const getUser = `-- name: GetUser :one
 SELECT id,
-       username,
        email,
        password_hash,
+       first_name,
+       last_name,
+       locale,
+       timezone,
        created_at,
        updated_at,
        deleted_at
@@ -66,9 +71,12 @@ func (q *Queries) GetUser(ctx context.Context, id string) (User, error) {
 	var i User
 	err := row.Scan(
 		&i.ID,
-		&i.Username,
 		&i.Email,
 		&i.PasswordHash,
+		&i.FirstName,
+		&i.LastName,
+		&i.Locale,
+		&i.Timezone,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
@@ -77,7 +85,7 @@ func (q *Queries) GetUser(ctx context.Context, id string) (User, error) {
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, username, email, password_hash, created_at, updated_at, deleted_at
+SELECT id, email, password_hash, first_name, last_name, locale, timezone, created_at, updated_at, deleted_at
   FROM users
  WHERE email = $1::TEXT
    AND deleted_at is NULL
@@ -89,32 +97,12 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 	var i User
 	err := row.Scan(
 		&i.ID,
-		&i.Username,
 		&i.Email,
 		&i.PasswordHash,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.DeletedAt,
-	)
-	return i, err
-}
-
-const getUserByUsername = `-- name: GetUserByUsername :one
- SELECT id, username, email, password_hash, created_at, updated_at, deleted_at
-   FROM users
-  WHERE username = $1::TEXT
-    AND deleted_at is NULL
-  LIMIT 1
-`
-
-func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User, error) {
-	row := q.db.QueryRow(ctx, getUserByUsername, username)
-	var i User
-	err := row.Scan(
-		&i.ID,
-		&i.Username,
-		&i.Email,
-		&i.PasswordHash,
+		&i.FirstName,
+		&i.LastName,
+		&i.Locale,
+		&i.Timezone,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
@@ -124,22 +112,23 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User,
 
 const listUsers = `-- name: ListUsers :many
   SELECT id,
-         username,
          email,
          password_hash,
+         first_name,
+         last_name,
+         locale,
+         timezone,
          created_at,
          updated_at,
          deleted_at
     FROM users
-   WHERE ($1::TEXT IS NULL OR username = $1)
-     AND ($2::TEXT IS NULL OR email = $2)
-     AND ($3::TIMESTAMP IS NULL OR created_at >= $3::TIMESTAMP)
-     AND ($4::TIMESTAMP IS NULL OR created_at <= $4::TIMESTAMP)
-     AND (deleted_at is null) = $5::BOOLEAN
+   WHERE ($1::TEXT IS NULL OR email = $1)
+     AND ($2::TIMESTAMP IS NULL OR created_at >= $2::TIMESTAMP)
+     AND ($3::TIMESTAMP IS NULL OR created_at <= $3::TIMESTAMP)
+     AND (deleted_at is null) = $4::BOOLEAN
 `
 
 type ListUsersParams struct {
-	Username          *string
 	Email             *string
 	CreatedStartRange *time.Time
 	CreatedEndRange   *time.Time
@@ -148,7 +137,6 @@ type ListUsersParams struct {
 
 func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error) {
 	rows, err := q.db.Query(ctx, listUsers,
-		arg.Username,
 		arg.Email,
 		arg.CreatedStartRange,
 		arg.CreatedEndRange,
@@ -163,9 +151,12 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, e
 		var i User
 		if err := rows.Scan(
 			&i.ID,
-			&i.Username,
 			&i.Email,
 			&i.PasswordHash,
+			&i.FirstName,
+			&i.LastName,
+			&i.Locale,
+			&i.Timezone,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
@@ -182,34 +173,46 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, e
 
 const updateUser = `-- name: UpdateUser :one
     UPDATE users
-       SET username      = $1::TEXT,
-           email         = $2::TEXT,
-           password_hash = $3::BYTEA,
+       SET email         = $1::TEXT,
+           password_hash = $2::BYTEA,
+           first_name    = $3::TEXT,
+           last_name     = $4::TEXT,
+           locale        = $5::TEXT,
+           timezone      = $6::TEXT,
            updated_at    = now()
-     WHERE id = $4::TEXT
- RETURNING id, username, email, password_hash, created_at, updated_at, deleted_at
+     WHERE id = $7::TEXT
+ RETURNING id, email, password_hash, first_name, last_name, locale, timezone, created_at, updated_at, deleted_at
 `
 
 type UpdateUserParams struct {
-	Username     string
 	Email        string
 	PasswordHash []byte
+	FirstName    string
+	LastName     string
+	Locale       string
+	Timezone     string
 	ID           string
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error) {
 	row := q.db.QueryRow(ctx, updateUser,
-		arg.Username,
 		arg.Email,
 		arg.PasswordHash,
+		arg.FirstName,
+		arg.LastName,
+		arg.Locale,
+		arg.Timezone,
 		arg.ID,
 	)
 	var i User
 	err := row.Scan(
 		&i.ID,
-		&i.Username,
 		&i.Email,
 		&i.PasswordHash,
+		&i.FirstName,
+		&i.LastName,
+		&i.Locale,
+		&i.Timezone,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,

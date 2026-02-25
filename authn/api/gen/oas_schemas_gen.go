@@ -3,9 +3,7 @@
 package api
 
 import (
-	"net/url"
-	"time"
-
+	"github.com/go-faster/errors"
 	"github.com/go-faster/jx"
 )
 
@@ -98,6 +96,14 @@ func (s *ErrorDetails) init() ErrorDetails {
 	return m
 }
 
+type GetUserByIDInternalServerError Error
+
+func (*GetUserByIDInternalServerError) getUserByIDRes() {}
+
+type GetUserByIDNotFound Error
+
+func (*GetUserByIDNotFound) getUserByIDRes() {}
+
 type GetUserProfileInternalServerError Error
 
 func (*GetUserProfileInternalServerError) getUserProfileRes() {}
@@ -141,8 +147,8 @@ type LoginResponse struct {
 	// Token type.
 	TokenType string `json:"tokenType"`
 	// Token expiration time in seconds.
-	ExpiresIn int          `json:"expiresIn"`
-	User      UserResponse `json:"user"`
+	ExpiresIn int  `json:"expiresIn"`
+	User      User `json:"user"`
 }
 
 // GetAccessToken returns the value of AccessToken.
@@ -161,7 +167,7 @@ func (s *LoginResponse) GetExpiresIn() int {
 }
 
 // GetUser returns the value of User.
-func (s *LoginResponse) GetUser() UserResponse {
+func (s *LoginResponse) GetUser() User {
 	return s.User
 }
 
@@ -181,7 +187,7 @@ func (s *LoginResponse) SetExpiresIn(val int) {
 }
 
 // SetUser sets the value of User.
-func (s *LoginResponse) SetUser(val UserResponse) {
+func (s *LoginResponse) SetUser(val User) {
 	s.User = val
 }
 
@@ -324,52 +330,6 @@ func (o OptString) Or(d string) string {
 	return d
 }
 
-// NewOptURI returns new OptURI with value set to v.
-func NewOptURI(v url.URL) OptURI {
-	return OptURI{
-		Value: v,
-		Set:   true,
-	}
-}
-
-// OptURI is optional url.URL.
-type OptURI struct {
-	Value url.URL
-	Set   bool
-}
-
-// IsSet returns true if OptURI was set.
-func (o OptURI) IsSet() bool { return o.Set }
-
-// Reset unsets value.
-func (o *OptURI) Reset() {
-	var v url.URL
-	o.Value = v
-	o.Set = false
-}
-
-// SetTo sets value to v.
-func (o *OptURI) SetTo(v url.URL) {
-	o.Set = true
-	o.Value = v
-}
-
-// Get returns value and boolean that denotes whether value was set.
-func (o OptURI) Get() (v url.URL, ok bool) {
-	if !o.Set {
-		return v, false
-	}
-	return o.Value, true
-}
-
-// Or returns value if set, or given parameter if does not.
-func (o OptURI) Or(d url.URL) url.URL {
-	if v, ok := o.Get(); ok {
-		return v
-	}
-	return d
-}
-
 // Ref: #/components/schemas/PasswordResetConfirm
 type PasswordResetConfirm struct {
 	// Password reset token received via email.
@@ -412,236 +372,6 @@ func (s *PasswordResetRequest) GetEmail() string {
 // SetEmail sets the value of Email.
 func (s *PasswordResetRequest) SetEmail(val string) {
 	s.Email = val
-}
-
-// Ref: #/components/schemas/ProfileResponse
-type ProfileResponse struct {
-	ID ULID `json:"id"`
-	// User's email address.
-	Email string `json:"email"`
-	// User's first name.
-	FirstName string `json:"firstName"`
-	// User's last name.
-	LastName string `json:"lastName"`
-	// User's phone number.
-	PhoneNumber OptString `json:"phoneNumber"`
-	// User's biography.
-	Bio OptString `json:"bio"`
-	// URL to user's avatar image.
-	AvatarUrl OptURI `json:"avatarUrl"`
-	// Account creation timestamp.
-	CreatedAt time.Time `json:"createdAt"`
-	// Last profile update timestamp.
-	UpdatedAt time.Time `json:"updatedAt"`
-}
-
-// GetID returns the value of ID.
-func (s *ProfileResponse) GetID() ULID {
-	return s.ID
-}
-
-// GetEmail returns the value of Email.
-func (s *ProfileResponse) GetEmail() string {
-	return s.Email
-}
-
-// GetFirstName returns the value of FirstName.
-func (s *ProfileResponse) GetFirstName() string {
-	return s.FirstName
-}
-
-// GetLastName returns the value of LastName.
-func (s *ProfileResponse) GetLastName() string {
-	return s.LastName
-}
-
-// GetPhoneNumber returns the value of PhoneNumber.
-func (s *ProfileResponse) GetPhoneNumber() OptString {
-	return s.PhoneNumber
-}
-
-// GetBio returns the value of Bio.
-func (s *ProfileResponse) GetBio() OptString {
-	return s.Bio
-}
-
-// GetAvatarUrl returns the value of AvatarUrl.
-func (s *ProfileResponse) GetAvatarUrl() OptURI {
-	return s.AvatarUrl
-}
-
-// GetCreatedAt returns the value of CreatedAt.
-func (s *ProfileResponse) GetCreatedAt() time.Time {
-	return s.CreatedAt
-}
-
-// GetUpdatedAt returns the value of UpdatedAt.
-func (s *ProfileResponse) GetUpdatedAt() time.Time {
-	return s.UpdatedAt
-}
-
-// SetID sets the value of ID.
-func (s *ProfileResponse) SetID(val ULID) {
-	s.ID = val
-}
-
-// SetEmail sets the value of Email.
-func (s *ProfileResponse) SetEmail(val string) {
-	s.Email = val
-}
-
-// SetFirstName sets the value of FirstName.
-func (s *ProfileResponse) SetFirstName(val string) {
-	s.FirstName = val
-}
-
-// SetLastName sets the value of LastName.
-func (s *ProfileResponse) SetLastName(val string) {
-	s.LastName = val
-}
-
-// SetPhoneNumber sets the value of PhoneNumber.
-func (s *ProfileResponse) SetPhoneNumber(val OptString) {
-	s.PhoneNumber = val
-}
-
-// SetBio sets the value of Bio.
-func (s *ProfileResponse) SetBio(val OptString) {
-	s.Bio = val
-}
-
-// SetAvatarUrl sets the value of AvatarUrl.
-func (s *ProfileResponse) SetAvatarUrl(val OptURI) {
-	s.AvatarUrl = val
-}
-
-// SetCreatedAt sets the value of CreatedAt.
-func (s *ProfileResponse) SetCreatedAt(val time.Time) {
-	s.CreatedAt = val
-}
-
-// SetUpdatedAt sets the value of UpdatedAt.
-func (s *ProfileResponse) SetUpdatedAt(val time.Time) {
-	s.UpdatedAt = val
-}
-
-func (*ProfileResponse) getUserProfileRes()    {}
-func (*ProfileResponse) updateUserProfileRes() {}
-
-// Ref: #/components/schemas/ProfileUpdateRequest
-type ProfileUpdateRequest struct {
-	// User's email address.
-	Email OptString `json:"email"`
-	// User's first name.
-	FirstName OptString `json:"firstName"`
-	// User's last name.
-	LastName OptString `json:"lastName"`
-	// User's phone number (E.164 format).
-	PhoneNumber OptString `json:"phoneNumber"`
-	// User's biography.
-	Bio OptString `json:"bio"`
-	// URL to user's avatar image.
-	AvatarUrl OptURI `json:"avatarUrl"`
-}
-
-// GetEmail returns the value of Email.
-func (s *ProfileUpdateRequest) GetEmail() OptString {
-	return s.Email
-}
-
-// GetFirstName returns the value of FirstName.
-func (s *ProfileUpdateRequest) GetFirstName() OptString {
-	return s.FirstName
-}
-
-// GetLastName returns the value of LastName.
-func (s *ProfileUpdateRequest) GetLastName() OptString {
-	return s.LastName
-}
-
-// GetPhoneNumber returns the value of PhoneNumber.
-func (s *ProfileUpdateRequest) GetPhoneNumber() OptString {
-	return s.PhoneNumber
-}
-
-// GetBio returns the value of Bio.
-func (s *ProfileUpdateRequest) GetBio() OptString {
-	return s.Bio
-}
-
-// GetAvatarUrl returns the value of AvatarUrl.
-func (s *ProfileUpdateRequest) GetAvatarUrl() OptURI {
-	return s.AvatarUrl
-}
-
-// SetEmail sets the value of Email.
-func (s *ProfileUpdateRequest) SetEmail(val OptString) {
-	s.Email = val
-}
-
-// SetFirstName sets the value of FirstName.
-func (s *ProfileUpdateRequest) SetFirstName(val OptString) {
-	s.FirstName = val
-}
-
-// SetLastName sets the value of LastName.
-func (s *ProfileUpdateRequest) SetLastName(val OptString) {
-	s.LastName = val
-}
-
-// SetPhoneNumber sets the value of PhoneNumber.
-func (s *ProfileUpdateRequest) SetPhoneNumber(val OptString) {
-	s.PhoneNumber = val
-}
-
-// SetBio sets the value of Bio.
-func (s *ProfileUpdateRequest) SetBio(val OptString) {
-	s.Bio = val
-}
-
-// SetAvatarUrl sets the value of AvatarUrl.
-func (s *ProfileUpdateRequest) SetAvatarUrl(val OptURI) {
-	s.AvatarUrl = val
-}
-
-// Ref: #/components/schemas/RegisterRequest
-type RegisterRequest struct {
-	// User's unique username.
-	Username string `json:"username"`
-	// User's email address.
-	Email string `json:"email"`
-	// User's password (minimum 8 characters).
-	Password string `json:"password"`
-}
-
-// GetUsername returns the value of Username.
-func (s *RegisterRequest) GetUsername() string {
-	return s.Username
-}
-
-// GetEmail returns the value of Email.
-func (s *RegisterRequest) GetEmail() string {
-	return s.Email
-}
-
-// GetPassword returns the value of Password.
-func (s *RegisterRequest) GetPassword() string {
-	return s.Password
-}
-
-// SetUsername sets the value of Username.
-func (s *RegisterRequest) SetUsername(val string) {
-	s.Username = val
-}
-
-// SetEmail sets the value of Email.
-func (s *RegisterRequest) SetEmail(val string) {
-	s.Email = val
-}
-
-// SetPassword sets the value of Password.
-func (s *RegisterRequest) SetPassword(val string) {
-	s.Password = val
 }
 
 type RegisterUserBadRequest Error
@@ -702,79 +432,274 @@ type UpdateUserProfileUnauthorized Error
 
 func (*UpdateUserProfileUnauthorized) updateUserProfileRes() {}
 
-// Ref: #/components/schemas/UserResponse
-type UserResponse struct {
+// Merged schema.
+// Ref: #/components/schemas/User
+type User struct {
+	// The user id.
 	ID ULID `json:"id"`
-	// User's email address.
+	// Principal type for extensibility.
+	Type UserType `json:"type"`
+	// User's unique email address (login identifier).
 	Email string `json:"email"`
 	// User's first name.
-	FirstName string `json:"firstName"`
+	FirstName OptString `json:"firstName"`
 	// User's last name.
-	LastName string `json:"lastName"`
-	// User's phone number.
-	PhoneNumber OptString `json:"phoneNumber"`
-	// Account creation timestamp.
-	CreatedAt time.Time `json:"createdAt"`
+	LastName OptString `json:"lastName"`
+	// User's locale.
+	Locale OptString `json:"locale"`
+	// User's timezone.
+	Timezone OptString `json:"timezone"`
 }
 
 // GetID returns the value of ID.
-func (s *UserResponse) GetID() ULID {
+func (s *User) GetID() ULID {
 	return s.ID
 }
 
+// GetType returns the value of Type.
+func (s *User) GetType() UserType {
+	return s.Type
+}
+
 // GetEmail returns the value of Email.
-func (s *UserResponse) GetEmail() string {
+func (s *User) GetEmail() string {
 	return s.Email
 }
 
 // GetFirstName returns the value of FirstName.
-func (s *UserResponse) GetFirstName() string {
+func (s *User) GetFirstName() OptString {
 	return s.FirstName
 }
 
 // GetLastName returns the value of LastName.
-func (s *UserResponse) GetLastName() string {
+func (s *User) GetLastName() OptString {
 	return s.LastName
 }
 
-// GetPhoneNumber returns the value of PhoneNumber.
-func (s *UserResponse) GetPhoneNumber() OptString {
-	return s.PhoneNumber
+// GetLocale returns the value of Locale.
+func (s *User) GetLocale() OptString {
+	return s.Locale
 }
 
-// GetCreatedAt returns the value of CreatedAt.
-func (s *UserResponse) GetCreatedAt() time.Time {
-	return s.CreatedAt
+// GetTimezone returns the value of Timezone.
+func (s *User) GetTimezone() OptString {
+	return s.Timezone
 }
 
 // SetID sets the value of ID.
-func (s *UserResponse) SetID(val ULID) {
+func (s *User) SetID(val ULID) {
 	s.ID = val
 }
 
+// SetType sets the value of Type.
+func (s *User) SetType(val UserType) {
+	s.Type = val
+}
+
 // SetEmail sets the value of Email.
-func (s *UserResponse) SetEmail(val string) {
+func (s *User) SetEmail(val string) {
 	s.Email = val
 }
 
 // SetFirstName sets the value of FirstName.
-func (s *UserResponse) SetFirstName(val string) {
+func (s *User) SetFirstName(val OptString) {
 	s.FirstName = val
 }
 
 // SetLastName sets the value of LastName.
-func (s *UserResponse) SetLastName(val string) {
+func (s *User) SetLastName(val OptString) {
 	s.LastName = val
 }
 
-// SetPhoneNumber sets the value of PhoneNumber.
-func (s *UserResponse) SetPhoneNumber(val OptString) {
-	s.PhoneNumber = val
+// SetLocale sets the value of Locale.
+func (s *User) SetLocale(val OptString) {
+	s.Locale = val
 }
 
-// SetCreatedAt sets the value of CreatedAt.
-func (s *UserResponse) SetCreatedAt(val time.Time) {
-	s.CreatedAt = val
+// SetTimezone sets the value of Timezone.
+func (s *User) SetTimezone(val OptString) {
+	s.Timezone = val
 }
 
-func (*UserResponse) registerUserRes() {}
+func (*User) getUserByIDRes()       {}
+func (*User) getUserProfileRes()    {}
+func (*User) registerUserRes()      {}
+func (*User) updateUserProfileRes() {}
+
+// Merged schema.
+// Ref: #/components/schemas/UserCreateRequest
+type UserCreateRequest struct {
+	// User's unique email address (login identifier).
+	Email string `json:"email"`
+	// User's password (minimum 8 characters).
+	Password string `json:"password"`
+	// User's first name.
+	FirstName OptString `json:"firstName"`
+	// User's last name.
+	LastName OptString `json:"lastName"`
+	// User's locale.
+	Locale OptString `json:"locale"`
+	// User's timezone.
+	Timezone OptString `json:"timezone"`
+}
+
+// GetEmail returns the value of Email.
+func (s *UserCreateRequest) GetEmail() string {
+	return s.Email
+}
+
+// GetPassword returns the value of Password.
+func (s *UserCreateRequest) GetPassword() string {
+	return s.Password
+}
+
+// GetFirstName returns the value of FirstName.
+func (s *UserCreateRequest) GetFirstName() OptString {
+	return s.FirstName
+}
+
+// GetLastName returns the value of LastName.
+func (s *UserCreateRequest) GetLastName() OptString {
+	return s.LastName
+}
+
+// GetLocale returns the value of Locale.
+func (s *UserCreateRequest) GetLocale() OptString {
+	return s.Locale
+}
+
+// GetTimezone returns the value of Timezone.
+func (s *UserCreateRequest) GetTimezone() OptString {
+	return s.Timezone
+}
+
+// SetEmail sets the value of Email.
+func (s *UserCreateRequest) SetEmail(val string) {
+	s.Email = val
+}
+
+// SetPassword sets the value of Password.
+func (s *UserCreateRequest) SetPassword(val string) {
+	s.Password = val
+}
+
+// SetFirstName sets the value of FirstName.
+func (s *UserCreateRequest) SetFirstName(val OptString) {
+	s.FirstName = val
+}
+
+// SetLastName sets the value of LastName.
+func (s *UserCreateRequest) SetLastName(val OptString) {
+	s.LastName = val
+}
+
+// SetLocale sets the value of Locale.
+func (s *UserCreateRequest) SetLocale(val OptString) {
+	s.Locale = val
+}
+
+// SetTimezone sets the value of Timezone.
+func (s *UserCreateRequest) SetTimezone(val OptString) {
+	s.Timezone = val
+}
+
+// Principal type for extensibility.
+type UserType string
+
+const (
+	UserTypeUSER           UserType = "USER"
+	UserTypeSERVICEACCOUNT UserType = "SERVICE_ACCOUNT"
+	UserTypeDEVICE         UserType = "DEVICE"
+)
+
+// AllValues returns all UserType values.
+func (UserType) AllValues() []UserType {
+	return []UserType{
+		UserTypeUSER,
+		UserTypeSERVICEACCOUNT,
+		UserTypeDEVICE,
+	}
+}
+
+// MarshalText implements encoding.TextMarshaler.
+func (s UserType) MarshalText() ([]byte, error) {
+	switch s {
+	case UserTypeUSER:
+		return []byte(s), nil
+	case UserTypeSERVICEACCOUNT:
+		return []byte(s), nil
+	case UserTypeDEVICE:
+		return []byte(s), nil
+	default:
+		return nil, errors.Errorf("invalid value: %q", s)
+	}
+}
+
+// UnmarshalText implements encoding.TextUnmarshaler.
+func (s *UserType) UnmarshalText(data []byte) error {
+	switch UserType(data) {
+	case UserTypeUSER:
+		*s = UserTypeUSER
+		return nil
+	case UserTypeSERVICEACCOUNT:
+		*s = UserTypeSERVICEACCOUNT
+		return nil
+	case UserTypeDEVICE:
+		*s = UserTypeDEVICE
+		return nil
+	default:
+		return errors.Errorf("invalid value: %q", data)
+	}
+}
+
+// Ref: #/components/schemas/UserUpdateRequest
+type UserUpdateRequest struct {
+	// User's first name.
+	FirstName OptString `json:"firstName"`
+	// User's last name.
+	LastName OptString `json:"lastName"`
+	// User's locale.
+	Locale OptString `json:"locale"`
+	// User's timezone.
+	Timezone OptString `json:"timezone"`
+}
+
+// GetFirstName returns the value of FirstName.
+func (s *UserUpdateRequest) GetFirstName() OptString {
+	return s.FirstName
+}
+
+// GetLastName returns the value of LastName.
+func (s *UserUpdateRequest) GetLastName() OptString {
+	return s.LastName
+}
+
+// GetLocale returns the value of Locale.
+func (s *UserUpdateRequest) GetLocale() OptString {
+	return s.Locale
+}
+
+// GetTimezone returns the value of Timezone.
+func (s *UserUpdateRequest) GetTimezone() OptString {
+	return s.Timezone
+}
+
+// SetFirstName sets the value of FirstName.
+func (s *UserUpdateRequest) SetFirstName(val OptString) {
+	s.FirstName = val
+}
+
+// SetLastName sets the value of LastName.
+func (s *UserUpdateRequest) SetLastName(val OptString) {
+	s.LastName = val
+}
+
+// SetLocale sets the value of Locale.
+func (s *UserUpdateRequest) SetLocale(val OptString) {
+	s.Locale = val
+}
+
+// SetTimezone sets the value of Timezone.
+func (s *UserUpdateRequest) SetTimezone(val OptString) {
+	s.Timezone = val
+}

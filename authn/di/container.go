@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"net/http"
 
-	api "github.com/faber-numeris/luciole-auth/api/gen"
+	"github.com/faber-numeris/luciole-auth/authn/api/gen"
 	"github.com/faber-numeris/luciole-auth/authn/configuration"
 	"github.com/faber-numeris/luciole-auth/authn/handlers"
 	"github.com/faber-numeris/luciole-auth/authn/persistence/database"

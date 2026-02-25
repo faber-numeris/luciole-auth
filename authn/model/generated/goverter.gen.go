@@ -4,50 +4,120 @@
 package generated
 
 import (
-	gen "github.com/faber-numeris/luciole-auth/api/gen"
+	gen "github.com/faber-numeris/luciole-auth/authn/api/gen"
 	model "github.com/faber-numeris/luciole-auth/authn/model"
+	extensions "github.com/faber-numeris/luciole-auth/authn/model/extensions"
 	sqlc "github.com/faber-numeris/luciole-auth/authn/persistence/sqlc"
-	"time"
 )
 
 type ConverterImpl struct{}
 
-func (c *ConverterImpl) RegisterRequestToUserModel(source gen.RegisterRequest) (*model.User, error) {
-	var modelUser model.User
-	modelUser.Username = source.Username
-	modelUser.Email = source.Email
-	return &modelUser, nil
-}
-func (c *ConverterImpl) SQLCUserToUser(source sqlc.User) (*model.User, error) {
+func (c *ConverterImpl) UserModelFromSQLC(source sqlc.User) (model.User, error) {
 	var modelUser model.User
 	modelUser.ID = source.ID
-	modelUser.Username = source.Username
 	modelUser.Email = source.Email
-	modelUser.CreatedAt = c.pTimeTimeToTimeTime(source.CreatedAt)
-	return &modelUser, nil
+	modelUser.Profile = extensions.SQLCUserToUserProfile(source)
+	return modelUser, nil
 }
-func (c *ConverterImpl) UserToRegisterUserRes(source model.User) (*gen.UserResponse, error) {
-	var apiUserResponse gen.UserResponse
-	apiULID, err := model.StringToULID(source.ID)
+func (c *ConverterImpl) UserModelFromUserRequest(source gen.UserCreateRequest) (model.User, error) {
+	var modelUser model.User
+	modelUser.Email = source.Email
+	pModelUserProfile, err := c.apiUserCreateRequestToPModelUserProfile(source)
+	if err != nil {
+		return modelUser, err
+	}
+	modelUser.Profile = pModelUserProfile
+	return modelUser, nil
+}
+func (c *ConverterImpl) UserModelToApiUser(source model.User) (gen.User, error) {
+	var apiUser gen.User
+	apiUser.ID = extensions.StringToULID(source.ID)
+	apiUser.Type = extensions.UserTypeToApiUserType(source.Type)
+	apiUser.Email = source.Email
+	var pString *string
+	if source.Profile != nil {
+		pString = &source.Profile.FirstName
+	}
+	apiUser.FirstName = c.pStringToApiOptString(pString)
+	var pString2 *string
+	if source.Profile != nil {
+		pString2 = &source.Profile.LastName
+	}
+	apiUser.LastName = c.pStringToApiOptString(pString2)
+	var pString3 *string
+	if source.Profile != nil {
+		pString3 = &source.Profile.Locale
+	}
+	apiUser.Locale = c.pStringToApiOptString(pString3)
+	var pString4 *string
+	if source.Profile != nil {
+		pString4 = &source.Profile.Timezone
+	}
+	apiUser.Timezone = c.pStringToApiOptString(pString4)
+	return apiUser, nil
+}
+func (c *ConverterImpl) UserModelToSQLC(source model.User) (sqlc.User, error) {
+	var sqlcUser sqlc.User
+	sqlcUser.ID = source.ID
+	sqlcUser.Email = source.Email
+	var pString *string
+	if source.Profile != nil {
+		pString = &source.Profile.FirstName
+	}
+	if pString != nil {
+		sqlcUser.FirstName = *pString
+	}
+	var pString2 *string
+	if source.Profile != nil {
+		pString2 = &source.Profile.LastName
+	}
+	if pString2 != nil {
+		sqlcUser.LastName = *pString2
+	}
+	var pString3 *string
+	if source.Profile != nil {
+		pString3 = &source.Profile.Locale
+	}
+	if pString3 != nil {
+		sqlcUser.Locale = *pString3
+	}
+	var pString4 *string
+	if source.Profile != nil {
+		pString4 = &source.Profile.Timezone
+	}
+	if pString4 != nil {
+		sqlcUser.Timezone = *pString4
+	}
+	return sqlcUser, nil
+}
+func (c *ConverterImpl) apiUserCreateRequestToPModelUserProfile(source gen.UserCreateRequest) (*model.UserProfile, error) {
+	var modelUserProfile model.UserProfile
+	xstring, err := extensions.OptStringToString(source.FirstName)
 	if err != nil {
 		return nil, err
 	}
-	apiUserResponse.ID = apiULID
-	apiUserResponse.Email = source.Email
-	apiUserResponse.FirstName = source.FirstName
-	apiUserResponse.LastName = source.LastName
-	apiOptString, err := model.StringToOptString(source.PhoneNumber)
+	modelUserProfile.FirstName = xstring
+	xstring2, err := extensions.OptStringToString(source.LastName)
 	if err != nil {
 		return nil, err
 	}
-	apiUserResponse.PhoneNumber = apiOptString
-	apiUserResponse.CreatedAt = source.CreatedAt
-	return &apiUserResponse, nil
+	modelUserProfile.LastName = xstring2
+	xstring3, err := extensions.OptStringToString(source.Locale)
+	if err != nil {
+		return nil, err
+	}
+	modelUserProfile.Locale = xstring3
+	xstring4, err := extensions.OptStringToString(source.Timezone)
+	if err != nil {
+		return nil, err
+	}
+	modelUserProfile.Timezone = xstring4
+	return &modelUserProfile, nil
 }
-func (c *ConverterImpl) pTimeTimeToTimeTime(source *time.Time) time.Time {
-	var timeTime time.Time
+func (c *ConverterImpl) pStringToApiOptString(source *string) gen.OptString {
+	var apiOptString gen.OptString
 	if source != nil {
-		timeTime = (*source)
+		apiOptString = extensions.StringToOptstring(*source)
 	}
-	return timeTime
+	return apiOptString
 }

@@ -9,13 +9,10 @@ import (
 // IUserService defines the interface for user business logic operations
 type IUserService interface {
 	// RegisterUser creates a new user account
-	RegisterUser(ctx context.Context, req *model.User) (*model.User, error)
+	RegisterUser(ctx context.Context, user *model.User, password string) (*model.User, error)
 
 	// GetUserByID retrieves a user by their ID
 	GetUserByID(ctx context.Context, id string) (*model.User, error)
-
-	// GetUserByUsername retrieves a user by their username
-	GetUserByUsername(ctx context.Context, username string) (*model.User, error)
 
 	// GetUserByEmail retrieves a user by their email
 	GetUserByEmail(ctx context.Context, email string) (*model.User, error)
@@ -32,7 +29,6 @@ type IUserService interface {
 
 // ListUsersParams contains parameters for listing users at the service level
 type ListUsersParams struct {
-	Username          *string
 	Email             *string
 	CreatedStartRange *string
 	CreatedEndRange   *string

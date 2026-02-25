@@ -22,6 +22,15 @@ func (UnimplementedHandler) ConfirmUserRegistration(ctx context.Context, params 
 	return r, ht.ErrNotImplemented
 }
 
+// GetUserByID implements getUserByID operation.
+//
+// Retrieves a user by their unique identifier.
+//
+// GET /users/{id}
+func (UnimplementedHandler) GetUserByID(ctx context.Context, params GetUserByIDParams) (r GetUserByIDRes, _ error) {
+	return r, ht.ErrNotImplemented
+}
+
 // GetUserProfile implements getUserProfile operation.
 //
 // Retrieves the authenticated user's profile information.
@@ -54,7 +63,7 @@ func (UnimplementedHandler) LogoutUser(ctx context.Context) (r LogoutUserRes, _ 
 // Creates a new user account with the provided credentials.
 //
 // POST /authn/register
-func (UnimplementedHandler) RegisterUser(ctx context.Context, req *RegisterRequest) (r RegisterUserRes, _ error) {
+func (UnimplementedHandler) RegisterUser(ctx context.Context, req *UserCreateRequest) (r RegisterUserRes, _ error) {
 	return r, ht.ErrNotImplemented
 }
 
@@ -81,6 +90,6 @@ func (UnimplementedHandler) ResetPassword(ctx context.Context, req *PasswordRese
 // Updates the authenticated user's profile information.
 //
 // PUT /profile
-func (UnimplementedHandler) UpdateUserProfile(ctx context.Context, req *ProfileUpdateRequest) (r UpdateUserProfileRes, _ error) {
+func (UnimplementedHandler) UpdateUserProfile(ctx context.Context, req *UserUpdateRequest) (r UpdateUserProfileRes, _ error) {
 	return r, ht.ErrNotImplemented
 }

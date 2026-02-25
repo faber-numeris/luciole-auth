@@ -25,7 +25,7 @@ func encodeLoginUserRequest(
 }
 
 func encodeRegisterUserRequest(
-	req *RegisterRequest,
+	req *UserCreateRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"
@@ -67,7 +67,7 @@ func encodeResetPasswordRequest(
 }
 
 func encodeUpdateUserProfileRequest(
-	req *ProfileUpdateRequest,
+	req *UserUpdateRequest,
 	r *http.Request,
 ) error {
 	const contentType = "application/json"

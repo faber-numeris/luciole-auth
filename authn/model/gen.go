@@ -1,3 +1,0 @@
-package model
-
-//go:generate go run github.com/jmattheis/goverter/cmd/goverter@v1.9.1 gen ./...

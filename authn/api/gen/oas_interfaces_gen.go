@@ -5,6 +5,10 @@ type ConfirmUserRegistrationRes interface {
 	confirmUserRegistrationRes()
 }
 
+type GetUserByIDRes interface {
+	getUserByIDRes()
+}
+
 type GetUserProfileRes interface {
 	getUserProfileRes()
 }

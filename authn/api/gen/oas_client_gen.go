@@ -17,7 +17,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/metric"
-	semconv "go.opentelemetry.io/otel/semconv/v1.37.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.39.0"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -34,6 +34,12 @@ type Invoker interface {
 	//
 	// GET /authn/confirm
 	ConfirmUserRegistration(ctx context.Context, params ConfirmUserRegistrationParams) (ConfirmUserRegistrationRes, error)
+	// GetUserByID invokes getUserByID operation.
+	//
+	// Retrieves a user by their unique identifier.
+	//
+	// GET /users/{id}
+	GetUserByID(ctx context.Context, params GetUserByIDParams) (GetUserByIDRes, error)
 	// GetUserProfile invokes getUserProfile operation.
 	//
 	// Retrieves the authenticated user's profile information.
@@ -57,7 +63,7 @@ type Invoker interface {
 	// Creates a new user account with the provided credentials.
 	//
 	// POST /authn/register
-	RegisterUser(ctx context.Context, request *RegisterRequest) (RegisterUserRes, error)
+	RegisterUser(ctx context.Context, request *UserCreateRequest) (RegisterUserRes, error)
 	// RequestPasswordReset invokes requestPasswordReset operation.
 	//
 	// Sends a password reset link to the user's email.
@@ -75,7 +81,7 @@ type Invoker interface {
 	// Updates the authenticated user's profile information.
 	//
 	// PUT /profile
-	UpdateUserProfile(ctx context.Context, request *ProfileUpdateRequest) (UpdateUserProfileRes, error)
+	UpdateUserProfile(ctx context.Context, request *UserUpdateRequest) (UpdateUserProfileRes, error)
 }
 
 // Client implements OAS client.
@@ -84,10 +90,6 @@ type Client struct {
 	sec       SecuritySource
 	baseClient
 }
-
-var _ Handler = struct {
-	*Client
-}{}
 
 // NewClient initializes new Client defined by OAS.
 func NewClient(serverURL string, sec SecuritySource, opts ...ClientOption) (*Client, error) {
@@ -203,10 +205,106 @@ func (c *Client) sendConfirmUserRegistration(ctx context.Context, params Confirm
 	if err != nil {
 		return res, errors.Wrap(err, "do request")
 	}
-	defer resp.Body.Close()
+	body := resp.Body
+	defer body.Close()
 
 	stage = "DecodeResponse"
 	result, err := decodeConfirmUserRegistrationResponse(resp)
+	if err != nil {
+		return res, errors.Wrap(err, "decode response")
+	}
+
+	return result, nil
+}
+
+// GetUserByID invokes getUserByID operation.
+//
+// Retrieves a user by their unique identifier.
+//
+// GET /users/{id}
+func (c *Client) GetUserByID(ctx context.Context, params GetUserByIDParams) (GetUserByIDRes, error) {
+	res, err := c.sendGetUserByID(ctx, params)
+	return res, err
+}
+
+func (c *Client) sendGetUserByID(ctx context.Context, params GetUserByIDParams) (res GetUserByIDRes, err error) {
+	otelAttrs := []attribute.KeyValue{
+		otelogen.OperationID("getUserByID"),
+		semconv.HTTPRequestMethodKey.String("GET"),
+		semconv.URLTemplateKey.String("/users/{id}"),
+	}
+	otelAttrs = append(otelAttrs, c.cfg.Attributes...)
+
+	// Run stopwatch.
+	startTime := time.Now()
+	defer func() {
+		// Use floating point division here for higher precision (instead of Millisecond method).
+		elapsedDuration := time.Since(startTime)
+		c.duration.Record(ctx, float64(elapsedDuration)/float64(time.Millisecond), metric.WithAttributes(otelAttrs...))
+	}()
+
+	// Increment request counter.
+	c.requests.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+
+	// Start a span for this request.
+	ctx, span := c.cfg.Tracer.Start(ctx, GetUserByIDOperation,
+		trace.WithAttributes(otelAttrs...),
+		clientSpanKind,
+	)
+	// Track stage for error reporting.
+	var stage string
+	defer func() {
+		if err != nil {
+			span.RecordError(err)
+			span.SetStatus(codes.Error, stage)
+			c.errors.Add(ctx, 1, metric.WithAttributes(otelAttrs...))
+		}
+		span.End()
+	}()
+
+	stage = "BuildURL"
+	u := uri.Clone(c.requestURL(ctx))
+	var pathParts [2]string
+	pathParts[0] = "/users/"
+	{
+		// Encode "id" parameter.
+		e := uri.NewPathEncoder(uri.PathEncoderConfig{
+			Param:   "id",
+			Style:   uri.PathStyleSimple,
+			Explode: false,
+		})
+		if err := func() error {
+			if unwrapped := string(params.ID); true {
+				return e.EncodeValue(conv.StringToString(unwrapped))
+			}
+			return nil
+		}(); err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		encoded, err := e.Result()
+		if err != nil {
+			return res, errors.Wrap(err, "encode path")
+		}
+		pathParts[1] = encoded
+	}
+	uri.AddPathParts(u, pathParts[:]...)
+
+	stage = "EncodeRequest"
+	r, err := ht.NewRequest(ctx, "GET", u)
+	if err != nil {
+		return res, errors.Wrap(err, "create request")
+	}
+
+	stage = "SendRequest"
+	resp, err := c.cfg.Client.Do(r)
+	if err != nil {
+		return res, errors.Wrap(err, "do request")
+	}
+	body := resp.Body
+	defer body.Close()
+
+	stage = "DecodeResponse"
+	result, err := decodeGetUserByIDResponse(resp)
 	if err != nil {
 		return res, errors.Wrap(err, "decode response")
 	}
@@ -309,7 +407,8 @@ func (c *Client) sendGetUserProfile(ctx context.Context) (res GetUserProfileRes,
 	if err != nil {
 		return res, errors.Wrap(err, "do request")
 	}
-	defer resp.Body.Close()
+	body := resp.Body
+	defer body.Close()
 
 	stage = "DecodeResponse"
 	result, err := decodeGetUserProfileResponse(resp)
@@ -385,7 +484,8 @@ func (c *Client) sendLoginUser(ctx context.Context, request *LoginRequest) (res 
 	if err != nil {
 		return res, errors.Wrap(err, "do request")
 	}
-	defer resp.Body.Close()
+	body := resp.Body
+	defer body.Close()
 
 	stage = "DecodeResponse"
 	result, err := decodeLoginUserResponse(resp)
@@ -491,7 +591,8 @@ func (c *Client) sendLogoutUser(ctx context.Context) (res LogoutUserRes, err err
 	if err != nil {
 		return res, errors.Wrap(err, "do request")
 	}
-	defer resp.Body.Close()
+	body := resp.Body
+	defer body.Close()
 
 	stage = "DecodeResponse"
 	result, err := decodeLogoutUserResponse(resp)
@@ -507,12 +608,12 @@ func (c *Client) sendLogoutUser(ctx context.Context) (res LogoutUserRes, err err
 // Creates a new user account with the provided credentials.
 //
 // POST /authn/register
-func (c *Client) RegisterUser(ctx context.Context, request *RegisterRequest) (RegisterUserRes, error) {
+func (c *Client) RegisterUser(ctx context.Context, request *UserCreateRequest) (RegisterUserRes, error) {
 	res, err := c.sendRegisterUser(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendRegisterUser(ctx context.Context, request *RegisterRequest) (res RegisterUserRes, err error) {
+func (c *Client) sendRegisterUser(ctx context.Context, request *UserCreateRequest) (res RegisterUserRes, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("registerUser"),
 		semconv.HTTPRequestMethodKey.String("POST"),
@@ -567,7 +668,8 @@ func (c *Client) sendRegisterUser(ctx context.Context, request *RegisterRequest)
 	if err != nil {
 		return res, errors.Wrap(err, "do request")
 	}
-	defer resp.Body.Close()
+	body := resp.Body
+	defer body.Close()
 
 	stage = "DecodeResponse"
 	result, err := decodeRegisterUserResponse(resp)
@@ -643,7 +745,8 @@ func (c *Client) sendRequestPasswordReset(ctx context.Context, request *Password
 	if err != nil {
 		return res, errors.Wrap(err, "do request")
 	}
-	defer resp.Body.Close()
+	body := resp.Body
+	defer body.Close()
 
 	stage = "DecodeResponse"
 	result, err := decodeRequestPasswordResetResponse(resp)
@@ -719,7 +822,8 @@ func (c *Client) sendResetPassword(ctx context.Context, request *PasswordResetCo
 	if err != nil {
 		return res, errors.Wrap(err, "do request")
 	}
-	defer resp.Body.Close()
+	body := resp.Body
+	defer body.Close()
 
 	stage = "DecodeResponse"
 	result, err := decodeResetPasswordResponse(resp)
@@ -735,12 +839,12 @@ func (c *Client) sendResetPassword(ctx context.Context, request *PasswordResetCo
 // Updates the authenticated user's profile information.
 //
 // PUT /profile
-func (c *Client) UpdateUserProfile(ctx context.Context, request *ProfileUpdateRequest) (UpdateUserProfileRes, error) {
+func (c *Client) UpdateUserProfile(ctx context.Context, request *UserUpdateRequest) (UpdateUserProfileRes, error) {
 	res, err := c.sendUpdateUserProfile(ctx, request)
 	return res, err
 }
 
-func (c *Client) sendUpdateUserProfile(ctx context.Context, request *ProfileUpdateRequest) (res UpdateUserProfileRes, err error) {
+func (c *Client) sendUpdateUserProfile(ctx context.Context, request *UserUpdateRequest) (res UpdateUserProfileRes, err error) {
 	otelAttrs := []attribute.KeyValue{
 		otelogen.OperationID("updateUserProfile"),
 		semconv.HTTPRequestMethodKey.String("PUT"),
@@ -828,7 +932,8 @@ func (c *Client) sendUpdateUserProfile(ctx context.Context, request *ProfileUpda
 	if err != nil {
 		return res, errors.Wrap(err, "do request")
 	}
-	defer resp.Body.Close()
+	body := resp.Body
+	defer body.Close()
 
 	stage = "DecodeResponse"
 	result, err := decodeUpdateUserProfileResponse(resp)

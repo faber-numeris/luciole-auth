@@ -14,9 +14,6 @@ type IUserRepository interface {
 	// GetUserByID retrieves a user by their ID
 	GetUserByID(ctx context.Context, id string) (*model.User, error)
 
-	// GetUserByUsername retrieves a user by their username
-	GetUserByUsername(ctx context.Context, username string) (*model.User, error)
-
 	// GetUserByEmail retrieves a user by their email
 	GetUserByEmail(ctx context.Context, email string) (*model.User, error)
 
@@ -32,7 +29,6 @@ type IUserRepository interface {
 
 // ListUsersParams contains parameters for listing users
 type ListUsersParams struct {
-	Username          *string
 	Email             *string
 	CreatedStartRange *string
 	CreatedEndRange   *string
