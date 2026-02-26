@@ -5,7 +5,7 @@ info:
 
 http:
   method: GET
-  url: http://{{baseUrl}}/profile
+  url: {{baseUrl}}/profile
   headers:
     - name: Accept
       value: application/json
@@ -22,7 +22,7 @@ settings:
 examples:
   - name: Profile retrieved successfully
     request:
-      url: http://{{baseUrl}}/profile
+      url: {{baseUrl}}/profile
       method: GET
       headers:
         - name: Accept
@@ -49,7 +49,7 @@ examples:
           }
   - name: Unauthorized - Invalid or missing token
     request:
-      url: http://{{baseUrl}}/profile
+      url: {{baseUrl}}/profile
       method: GET
       headers:
         - name: Accept
@@ -74,7 +74,7 @@ examples:
           }
   - name: Internal server error
     request:
-      url: http://{{baseUrl}}/profile
+      url: {{baseUrl}}/profile
       method: GET
       headers:
         - name: Accept
