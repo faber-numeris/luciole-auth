@@ -1,8 +1,11 @@
 -- name: GetUser :one
 SELECT id,
-       username,
        email,
        password_hash,
+       first_name,
+       last_name,
+       locale,
+       timezone,
        created_at,
        updated_at,
        deleted_at
@@ -10,13 +13,6 @@ FROM users
 WHERE id = @id::TEXT
 LIMIT 1;
 
-
--- name: GetUserByUsername :one
- SELECT *
-   FROM users
-  WHERE username = @username::TEXT
-    AND deleted_at is NULL
-  LIMIT 1;
 
 -- name: GetUserByEmail :one
 SELECT *
@@ -27,29 +23,34 @@ SELECT *
 
 -- name: ListUsers :many
   SELECT id,
-         username,
          email,
          password_hash,
+         first_name,
+         last_name,
+         locale,
+         timezone,
          created_at,
          updated_at,
          deleted_at
     FROM users
-   WHERE (sqlc.narg('username')::TEXT IS NULL OR username = sqlc.narg('username'))
-     AND (sqlc.narg('email')::TEXT IS NULL OR email = sqlc.narg('email'))
+   WHERE (sqlc.narg('email')::TEXT IS NULL OR email = sqlc.narg('email'))
      AND (sqlc.narg('created_start_range')::TIMESTAMP IS NULL OR created_at >= sqlc.narg('created_start_range')::TIMESTAMP)
      AND (sqlc.narg('created_end_range')::TIMESTAMP IS NULL OR created_at <= sqlc.narg('created_end_range')::TIMESTAMP)
      AND (deleted_at is null) = @active::BOOLEAN;
 
 -- name: CreateUser :one
-INSERT INTO users(username, email, password_hash)
-     VALUES (@username::TEXT, @email::TEXT, @password_hash::BYTEA)
+INSERT INTO users(email, password_hash)
+     VALUES (@email::TEXT, @password_hash::BYTEA)
   RETURNING *;
 
 -- name: UpdateUser :one
     UPDATE users
-       SET username      = @username::TEXT,
-           email         = @email::TEXT,
+       SET email         = @email::TEXT,
            password_hash = @password_hash::BYTEA,
+           first_name    = @first_name::TEXT,
+           last_name     = @last_name::TEXT,
+           locale        = @locale::TEXT,
+           timezone      = @timezone::TEXT,
            updated_at    = now()
      WHERE id = @id::TEXT
  RETURNING *;

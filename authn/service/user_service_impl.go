@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/faber-numeris/luciole-auth/authn/model"
-	"github.com/faber-numeris/luciole-auth/authn/model/generated"
 	"github.com/faber-numeris/luciole-auth/authn/persistence/repository"
 )
 
@@ -13,7 +12,6 @@ import (
 type UserServiceImpl struct {
 	userRepo       repository.IUserRepository
 	hashingService IHashingService
-	converter      *generated.ConverterImpl
 }
 
 // NewUserService creates a new instance of UserServiceImpl
@@ -21,13 +19,12 @@ func NewUserService(userRepo repository.IUserRepository, hashingService IHashing
 	return &UserServiceImpl{
 		userRepo:       userRepo,
 		hashingService: hashingService,
-		converter:      &generated.ConverterImpl{},
 	}
 }
 
 // RegisterUser creates a new user account
-func (s *UserServiceImpl) RegisterUser(ctx context.Context, user *model.User) (*model.User, error) {
-	passwordHash, err := s.hashingService.HashPassword(ctx, user.Password)
+func (s *UserServiceImpl) RegisterUser(ctx context.Context, user *model.User, password string) (*model.User, error) {
+	passwordHash, err := s.hashingService.HashPassword(ctx, password)
 	if err != nil {
 		return nil, fmt.Errorf("failed to hash password: %w", err)
 	}
@@ -41,17 +38,17 @@ func (s *UserServiceImpl) RegisterUser(ctx context.Context, user *model.User) (*
 }
 
 // GetUserByID retrieves a user by their ID
-// TODO: Implement GetUserByID method
-// assignees: rafaelsousa
 func (s *UserServiceImpl) GetUserByID(ctx context.Context, id string) (*model.User, error) {
-	panic("not implemented")
-}
+	user, err := s.userRepo.GetUserByID(ctx, id)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get user by id: %w", err)
+	}
 
-// GetUserByUsername retrieves a user by their username
-// TODO: Implement GetUserByUsername method
-// assignees: rafaelsousa
-func (s *UserServiceImpl) GetUserByUsername(ctx context.Context, username string) (*model.User, error) {
-	panic("not implemented")
+	if user == nil {
+		return nil, nil
+	}
+
+	return user, nil
 }
 
 // GetUserByEmail retrieves a user by their email

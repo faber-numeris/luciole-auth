@@ -70,9 +70,55 @@ func encodeConfirmUserRegistrationResponse(response ConfirmUserRegistrationRes, 
 	}
 }
 
+func encodeGetUserByIDResponse(response GetUserByIDRes, w http.ResponseWriter, span trace.Span) error {
+	switch response := response.(type) {
+	case *User:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(200)
+		span.SetStatus(codes.Ok, http.StatusText(200))
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *GetUserByIDNotFound:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(404)
+		span.SetStatus(codes.Error, http.StatusText(404))
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	case *GetUserByIDInternalServerError:
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(500)
+		span.SetStatus(codes.Error, http.StatusText(500))
+
+		e := new(jx.Encoder)
+		response.Encode(e)
+		if _, err := e.WriteTo(w); err != nil {
+			return errors.Wrap(err, "write")
+		}
+
+		return nil
+
+	default:
+		return errors.Errorf("unexpected response type: %T", response)
+	}
+}
+
 func encodeGetUserProfileResponse(response GetUserProfileRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
-	case *ProfileResponse:
+	case *User:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
 		span.SetStatus(codes.Ok, http.StatusText(200))
@@ -216,7 +262,7 @@ func encodeLogoutUserResponse(response LogoutUserRes, w http.ResponseWriter, spa
 
 func encodeRegisterUserResponse(response RegisterUserRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
-	case *UserResponse:
+	case *User:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(201)
 		span.SetStatus(codes.Ok, http.StatusText(201))
@@ -406,7 +452,7 @@ func encodeResetPasswordResponse(response ResetPasswordRes, w http.ResponseWrite
 
 func encodeUpdateUserProfileResponse(response UpdateUserProfileRes, w http.ResponseWriter, span trace.Span) error {
 	switch response := response.(type) {
-	case *ProfileResponse:
+	case *User:
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")
 		w.WriteHeader(200)
 		span.SetStatus(codes.Ok, http.StatusText(200))

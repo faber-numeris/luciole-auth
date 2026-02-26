@@ -14,6 +14,12 @@ type Handler interface {
 	//
 	// GET /authn/confirm
 	ConfirmUserRegistration(ctx context.Context, params ConfirmUserRegistrationParams) (ConfirmUserRegistrationRes, error)
+	// GetUserByID implements getUserByID operation.
+	//
+	// Retrieves a user by their unique identifier.
+	//
+	// GET /users/{id}
+	GetUserByID(ctx context.Context, params GetUserByIDParams) (GetUserByIDRes, error)
 	// GetUserProfile implements getUserProfile operation.
 	//
 	// Retrieves the authenticated user's profile information.
@@ -37,7 +43,7 @@ type Handler interface {
 	// Creates a new user account with the provided credentials.
 	//
 	// POST /authn/register
-	RegisterUser(ctx context.Context, req *RegisterRequest) (RegisterUserRes, error)
+	RegisterUser(ctx context.Context, req *UserCreateRequest) (RegisterUserRes, error)
 	// RequestPasswordReset implements requestPasswordReset operation.
 	//
 	// Sends a password reset link to the user's email.
@@ -55,7 +61,7 @@ type Handler interface {
 	// Updates the authenticated user's profile information.
 	//
 	// PUT /profile
-	UpdateUserProfile(ctx context.Context, req *ProfileUpdateRequest) (UpdateUserProfileRes, error)
+	UpdateUserProfile(ctx context.Context, req *UserUpdateRequest) (UpdateUserProfileRes, error)
 }
 
 // Server implements http server based on OpenAPI v3 specification and

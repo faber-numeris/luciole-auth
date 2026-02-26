@@ -1,21 +1,39 @@
 package model
 
-import (
-	"time"
+type UserType string
+
+const (
+	UserTypeUser           UserType = "USER"
+	UserTypeServiceAccount UserType = "SERVICE_ACCOUNT"
+	UserTypeDevice         UserType = "DEVICE"
 )
 
-// User represents the domain model for a user entity
-// This struct isolates the sqlc structs from the API generated objects
+type ContactType string
+
+const (
+	ContactTypeAddress   ContactType = "ADDRESS"
+	ContactTypeTelephone ContactType = "TELEPHONE"
+	ContactTypeMobile    ContactType = "MOBILE"
+	ContactTypeEmail     ContactType = "EMAIL"
+	ContactTypeWebsite   ContactType = "WEBSITE"
+)
+
+type Contact struct {
+	ContactType  ContactType `json:"contactType"`
+	ContactValue string      `json:"contactValue"`
+}
+
 type User struct {
-	ID          string    `json:"id"`
-	Username    string    `json:"username"`
-	Email       string    `json:"email"`
-	Password    string    `json:"password"`
-	FirstName   string    `json:"firstName"`
-	LastName    string    `json:"lastName"`
-	PhoneNumber string    `json:"phoneNumber"`
-	Bio         string    `json:"bio"`
-	AvatarURL   string    `json:"avatarUrl"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID       string   `json:"id"`
+	Type     UserType `json:"type"`
+	Email    string   `json:"email"`
+	Profile  *UserProfile
+	Contacts []Contact
+}
+
+type UserProfile struct {
+	FirstName string `json:"firstName,omitempty"`
+	LastName  string `json:"lastName,omitempty"`
+	Locale    string `json:"locale,omitempty"`
+	Timezone  string `json:"timezone,omitempty"`
 }

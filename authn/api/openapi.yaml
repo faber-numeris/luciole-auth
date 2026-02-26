@@ -1,7 +1,9 @@
-openapi: 3.1.0
+openapi: 3.1
 info:
   title: Luciole Authentication Service API
-  description: API for user authentication, profile management, and password operations using opaque tokens.
+  description: |
+    API for user authentication, profile management, and password operations using opaque tokens.
+    Email is the unique primary identifier for all users.
   version: 0.0.1
   contact:
     name: API Support
@@ -22,6 +24,8 @@ tags:
     description: User profile management
   - name: Password
     description: Password management operations
+  - name: Users
+    description: User management operations
 
 paths:
   /authn/register:
@@ -36,14 +40,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/RegisterRequest'
+              $ref: '#/components/schemas/UserCreateRequest'
       responses:
         '201':
           description: User successfully registered
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserResponse'
+                $ref: '#/components/schemas/User'
         '400':
           description: Invalid request data
           content:
@@ -62,6 +66,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+
   /authn/confirm:
     get:
       tags:
@@ -141,7 +146,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
-
   /authn/logout:
     post:
       tags:
@@ -150,7 +154,7 @@ paths:
       description: Invalidates the current user's access token
       operationId: logoutUser
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       responses:
         '204':
           description: Logout successful
@@ -259,14 +263,14 @@ paths:
       description: Retrieves the authenticated user's profile information
       operationId: getUserProfile
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       responses:
         '200':
           description: Profile retrieved successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProfileResponse'
+                $ref: '#/components/schemas/User'
         '401':
           description: Unauthorized - Invalid or missing token
           content:
@@ -287,20 +291,20 @@ paths:
       description: Updates the authenticated user's profile information
       operationId: updateUserProfile
       security:
-        - BearerAuth: []
+        - BearerAuth: [ ]
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ProfileUpdateRequest'
+              $ref: '#/components/schemas/UserUpdateRequest'
       responses:
         '200':
           description: Profile updated successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ProfileResponse'
+                $ref: '#/components/schemas/User'
         '400':
           description: Invalid request data
           content:
@@ -326,6 +330,40 @@ paths:
               schema:
                 $ref: '#/components/schemas/Error'
 
+  /users/{id}:
+    get:
+      tags:
+        - Users
+      summary: Get user by ID
+      description: Retrieves a user by their unique identifier
+      operationId: getUserByID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: User's unique identifier
+          schema:
+            $ref: '#/components/schemas/ULID'
+      responses:
+        '200':
+          description: User retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
 components:
   securitySchemes:
     BearerAuth:
@@ -334,28 +372,49 @@ components:
       description: Opaque authentication token
 
   schemas:
+    # =============================================================================
+    # ATOMIC SCHEMAS - Single Responsibility, Reusable
+    # =============================================================================
+
     ULID:
       type: string
-      pattern: '^[0-7][0-9A-HJKMNP-TV-Z]{25}$'
-      description: ULID (Universally Unique Lexicographically Sortable Identifier)
-      example: "01H8R5X7X9Y2Z4W6V8T0S1Q2R"
-    RegisterRequest:
+      pattern: '^[0-9A-HJKMNP-TV-Z]{26}$'
+      description: Universally Unique Lexicographically Sortable Identifier
+      example: 01H8R5X7X9Y2Z4W6V8T0S1Q2R
+
+    UserBase:
       type: object
       required:
-        - username
+        - id
+        - type
         - email
-        - password
       properties:
-        username:
+        id:
+          $ref: '#/components/schemas/ULID'
+          description: The user id
+        type:
           type: string
-          minLength: 3
-          maxLength: 50
-          description: User's unique username
-          example: johndoe
+          enum:
+            - USER
+            - SERVICE_ACCOUNT
+            - DEVICE
+          description: Principal type for extensibility
         email:
           type: string
           format: email
-          description: User's email address
+          description: User's unique email address (login identifier)
+          example: user@example.com
+
+    UserCredentials:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: User's unique email address (login identifier)
           example: user@example.com
         password:
           type: string
@@ -363,6 +422,65 @@ components:
           minLength: 8
           description: User's password (minimum 8 characters)
           example: SecurePass123!
+
+    UserProfile:
+      type: object
+      properties:
+        firstName:
+          type: string
+          description: User's first name
+          example: John
+        lastName:
+          type: string
+          description: User's last name
+          example: Doe
+        locale:
+          type: string
+          description: User's locale
+          example: en-CA
+        timezone:
+          type: string
+          description: User's timezone
+          example: America/Toronto
+
+
+    # =============================================================================
+    # COMPOSED SCHEMAS - Built from atomic schemas
+    # =============================================================================
+
+    User:
+      allOf:
+        - $ref: '#/components/schemas/UserBase'
+        - $ref: '#/components/schemas/UserProfile'
+
+    UserCreateRequest:
+      allOf:
+        - $ref: '#/components/schemas/UserCredentials'
+        - $ref: '#/components/schemas/UserProfile'
+
+    UserUpdateRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+          description: User's first name
+          example: John
+        lastName:
+          type: string
+          description: User's last name
+          example: Doe
+        locale:
+          type: string
+          description: User's locale
+          example: en-CA
+        timezone:
+          type: string
+          description: User's timezone
+          example: America/Toronto
+
+    # =============================================================================
+    # REQUEST/RESPONSE SCHEMAS
+    # =============================================================================
 
     LoginRequest:
       type: object
@@ -402,41 +520,7 @@ components:
           description: Token expiration time in seconds
           example: 3600
         user:
-          $ref: '#/components/schemas/UserResponse'
-
-    UserResponse:
-      type: object
-      required:
-        - id
-        - email
-        - firstName
-        - lastName
-        - createdAt
-      properties:
-        id:
-          $ref: '#/components/schemas/ULID'
-        email:
-          type: string
-          format: email
-          description: User's email address
-          example: user@example.com
-        firstName:
-          type: string
-          description: User's first name
-          example: John
-        lastName:
-          type: string
-          description: User's last name
-          example: Doe
-        phoneNumber:
-          type: string
-          description: User's phone number
-          example: "+1234567890"
-        createdAt:
-          type: string
-          format: date-time
-          description: Account creation timestamp
-          example: "2024-01-15T10:30:00Z"
+          $ref: '#/components/schemas/User'
 
     PasswordResetRequest:
       type: object
@@ -465,92 +549,6 @@ components:
           minLength: 8
           description: New password (minimum 8 characters)
           example: NewSecurePass456!
-
-    ProfileResponse:
-      type: object
-      required:
-        - id
-        - email
-        - firstName
-        - lastName
-        - createdAt
-        - updatedAt
-      properties:
-        id:
-          $ref: '#/components/schemas/ULID'
-        email:
-          type: string
-          format: email
-          description: User's email address
-          example: user@example.com
-        firstName:
-          type: string
-          description: User's first name
-          example: John
-        lastName:
-          type: string
-          description: User's last name
-          example: Doe
-        phoneNumber:
-          type: string
-          description: User's phone number
-          example: "+1234567890"
-        bio:
-          type: string
-          maxLength: 500
-          description: User's biography
-          example: Software developer passionate about Go
-        avatarUrl:
-          type: string
-          format: uri
-          description: URL to user's avatar image
-          example: https://example.com/avatars/user123.jpg
-        createdAt:
-          type: string
-          format: date-time
-          description: Account creation timestamp
-          example: "2024-01-15T10:30:00Z"
-        updatedAt:
-          type: string
-          format: date-time
-          description: Last profile update timestamp
-          example: "2024-01-20T14:45:00Z"
-
-    ProfileUpdateRequest:
-      type: object
-      properties:
-        email:
-          type: string
-          format: email
-          description: User's email address
-          example: newemail@example.com
-        firstName:
-          type: string
-          minLength: 1
-          maxLength: 50
-          description: User's first name
-          example: John
-        lastName:
-          type: string
-          minLength: 1
-          maxLength: 50
-          description: User's last name
-          example: Doe
-        phoneNumber:
-          type: string
-          pattern: '^\+?[1-9]\d{1,14}$'
-          description: User's phone number (E.164 format)
-          example: "+1234567890"
-        bio:
-          type: string
-          maxLength: 500
-          description: User's biography
-          example: Software developer passionate about Go
-        avatarUrl:
-          type: string
-          format: uri
-          description: URL to user's avatar image
-          example: https://example.com/avatars/user123.jpg
 
     MessageResponse:
       type: object

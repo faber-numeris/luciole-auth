@@ -7,6 +7,7 @@ type OperationName = string
 
 const (
 	ConfirmUserRegistrationOperation OperationName = "ConfirmUserRegistration"
+	GetUserByIDOperation             OperationName = "GetUserByID"
 	GetUserProfileOperation          OperationName = "GetUserProfile"
 	LoginUserOperation               OperationName = "LoginUser"
 	LogoutUserOperation              OperationName = "LogoutUser"

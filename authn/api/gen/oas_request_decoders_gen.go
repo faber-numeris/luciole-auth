@@ -94,7 +94,7 @@ func (s *Server) decodeLoginUserRequest(r *http.Request) (
 }
 
 func (s *Server) decodeRegisterUserRequest(r *http.Request) (
-	req *RegisterRequest,
+	req *UserCreateRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -141,7 +141,7 @@ func (s *Server) decodeRegisterUserRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request RegisterRequest
+		var request UserCreateRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -331,7 +331,7 @@ func (s *Server) decodeResetPasswordRequest(r *http.Request) (
 }
 
 func (s *Server) decodeUpdateUserProfileRequest(r *http.Request) (
-	req *ProfileUpdateRequest,
+	req *UserUpdateRequest,
 	rawBody []byte,
 	close func() error,
 	rerr error,
@@ -378,7 +378,7 @@ func (s *Server) decodeUpdateUserProfileRequest(r *http.Request) (
 		rawBody = append(rawBody, buf...)
 		d := jx.DecodeBytes(buf)
 
-		var request ProfileUpdateRequest
+		var request UserUpdateRequest
 		if err := func() error {
 			if err := request.Decode(d); err != nil {
 				return err
@@ -394,14 +394,6 @@ func (s *Server) decodeUpdateUserProfileRequest(r *http.Request) (
 				Err:         err,
 			}
 			return req, rawBody, close, err
-		}
-		if err := func() error {
-			if err := request.Validate(); err != nil {
-				return err
-			}
-			return nil
-		}(); err != nil {
-			return req, rawBody, close, errors.Wrap(err, "validate")
 		}
 		return &request, rawBody, close, nil
 	default:
