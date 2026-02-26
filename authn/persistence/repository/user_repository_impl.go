@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"time"
 
 	"github.com/faber-numeris/luciole-auth/authn/model"
 	"github.com/faber-numeris/luciole-auth/authn/model/generated"
@@ -90,21 +89,10 @@ func (r *SQLCUserRepository) DeleteUser(ctx context.Context, id string) error {
 
 func (r *SQLCUserRepository) ListUsers(ctx context.Context, params *ListUsersParams) ([]*model.User, error) {
 	sqlcParams := sqlc.ListUsersParams{
-		Active: params.Active,
-	}
-
-	if params.Email != nil {
-		sqlcParams.Email = params.Email
-	}
-	if params.CreatedStartRange != nil {
-		if parsedTime, err := time.Parse(time.RFC3339, *params.CreatedStartRange); err == nil {
-			sqlcParams.CreatedStartRange = &parsedTime
-		}
-	}
-	if params.CreatedEndRange != nil {
-		if parsedTime, err := time.Parse(time.RFC3339, *params.CreatedEndRange); err == nil {
-			sqlcParams.CreatedEndRange = &parsedTime
-		}
+		Active:            params.Active,
+		Email:             params.Email,
+		CreatedStartRange: params.CreatedStartRange,
+		CreatedEndRange:   params.CreatedEndRange,
 	}
 
 	sqlcUsers, err := r.querier.ListUsers(ctx, sqlcParams)

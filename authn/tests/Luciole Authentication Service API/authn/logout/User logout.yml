@@ -1,0 +1,87 @@
+info:
+  name: User logout
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: http://{{baseUrl}}/authn/logout
+  headers:
+    - name: Accept
+      value: application/json
+  auth:
+    type: bearer
+    token: "{{bearerToken}}"
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: Logout successful
+    request:
+      url: http://{{baseUrl}}/authn/logout
+      method: POST
+      headers:
+        - name: Authorization
+          value: Bearer <token>
+          description: "Added as a part of security scheme: bearer"
+    response:
+      statusText: "204"
+      body:
+        type: text
+        data: ""
+  - name: Unauthorized - Invalid or missing token
+    request:
+      url: http://{{baseUrl}}/authn/logout
+      method: POST
+      headers:
+        - name: Accept
+          value: application/json
+        - name: Authorization
+          value: Bearer <token>
+          description: "Added as a part of security scheme: bearer"
+    response:
+      statusText: "401"
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": "<string>",
+            "message": "<string>",
+            "details": {
+              "key_0": "string"
+            }
+          }
+  - name: Internal server error
+    request:
+      url: http://{{baseUrl}}/authn/logout
+      method: POST
+      headers:
+        - name: Accept
+          value: application/json
+        - name: Authorization
+          value: Bearer <token>
+          description: "Added as a part of security scheme: bearer"
+    response:
+      statusText: "500"
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": "<string>",
+            "message": "<string>",
+            "details": {
+              "key_0": "string"
+            }
+          }
+
+docs: Invalidates the current user's access token

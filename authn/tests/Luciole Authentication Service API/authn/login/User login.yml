@@ -1,0 +1,162 @@
+info:
+  name: User login
+  type: http
+  seq: 1
+
+http:
+  method: POST
+  url: http://{{baseUrl}}/authn/login
+  headers:
+    - name: Content-Type
+      value: application/json
+    - name: Accept
+      value: application/json
+  body:
+    type: json
+    data: |-
+      {
+        "email": "<email>",
+        "password": "<string>"
+      }
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: Login successful
+    request:
+      url: http://{{baseUrl}}/authn/login
+      method: POST
+      headers:
+        - name: Content-Type
+          value: application/json
+        - name: Accept
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "email": "<email>",
+            "password": "<string>"
+          }
+    response:
+      statusText: "200"
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "accessToken": "<string>",
+            "tokenType": "<string>",
+            "expiresIn": "<integer>",
+            "user": {
+              "id": "W0955Y7JWCEARWAGV08AJSWZ3H",
+              "type": "USER",
+              "email": "<email>",
+              "firstName": "<string>",
+              "lastName": "<string>",
+              "locale": "<string>",
+              "timezone": "<string>"
+            }
+          }
+  - name: Invalid request data
+    request:
+      url: http://{{baseUrl}}/authn/login
+      method: POST
+      headers:
+        - name: Content-Type
+          value: application/json
+        - name: Accept
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "email": "<email>",
+            "password": "<string>"
+          }
+    response:
+      statusText: "400"
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": "<string>",
+            "message": "<string>",
+            "details": {
+              "key_0": "string"
+            }
+          }
+  - name: Invalid credentials
+    request:
+      url: http://{{baseUrl}}/authn/login
+      method: POST
+      headers:
+        - name: Content-Type
+          value: application/json
+        - name: Accept
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "email": "<email>",
+            "password": "<string>"
+          }
+    response:
+      statusText: "401"
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": "<string>",
+            "message": "<string>",
+            "details": {
+              "key_0": "string"
+            }
+          }
+  - name: Internal server error
+    request:
+      url: http://{{baseUrl}}/authn/login
+      method: POST
+      headers:
+        - name: Content-Type
+          value: application/json
+        - name: Accept
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "email": "<email>",
+            "password": "<string>"
+          }
+    response:
+      statusText: "500"
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": "<string>",
+            "message": "<string>",
+            "details": {
+              "key_0": "string"
+            }
+          }
+
+docs: Authenticates a user and returns an opaque access token

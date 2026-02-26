@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"time"
 
 	"github.com/faber-numeris/luciole-auth/authn/model"
 )
@@ -30,7 +31,7 @@ type IUserRepository interface {
 // ListUsersParams contains parameters for listing users
 type ListUsersParams struct {
 	Email             *string
-	CreatedStartRange *string
-	CreatedEndRange   *string
+	CreatedStartRange *time.Time
+	CreatedEndRange   *time.Time
 	Active            bool
 }

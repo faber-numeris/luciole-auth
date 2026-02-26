@@ -1,0 +1,105 @@
+info:
+  name: Get user by ID
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: http://{{baseUrl}}/users/{{userID}}
+  headers:
+    - name: Accept
+      value: application/json
+  auth: inherit
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5
+
+examples:
+  - name: User retrieved successfully
+    request:
+      url: http://{{baseUrl}}/users/:id
+      method: GET
+      headers:
+        - name: Accept
+          value: application/json
+      params:
+        - name: id
+          value: 4R7WR659RKJEHQK2FFFBAVBJZ9
+          type: path
+          description: (Required) User's unique identifier
+    response:
+      statusText: "200"
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "id": "SFFMC61GPHSDM33THYAG6Y0W11",
+            "type": "USER",
+            "email": "<email>",
+            "firstName": "<string>",
+            "lastName": "<string>",
+            "locale": "<string>",
+            "timezone": "<string>"
+          }
+  - name: User not found
+    request:
+      url: http://{{baseUrl}}/users/:id
+      method: GET
+      headers:
+        - name: Accept
+          value: application/json
+      params:
+        - name: id
+          value: 4R7WR659RKJEHQK2FFFBAVBJZ9
+          type: path
+          description: (Required) User's unique identifier
+    response:
+      statusText: "404"
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": "<string>",
+            "message": "<string>",
+            "details": {
+              "key_0": "string"
+            }
+          }
+  - name: Internal server error
+    request:
+      url: http://{{baseUrl}}/users/:id
+      method: GET
+      headers:
+        - name: Accept
+          value: application/json
+      params:
+        - name: id
+          value: 4R7WR659RKJEHQK2FFFBAVBJZ9
+          type: path
+          description: (Required) User's unique identifier
+    response:
+      statusText: "500"
+      headers:
+        - name: Content-Type
+          value: application/json
+      body:
+        type: json
+        data: |-
+          {
+            "error": "<string>",
+            "message": "<string>",
+            "details": {
+              "key_0": "string"
+            }
+          }
+
+docs: Retrieves a user by their unique identifier

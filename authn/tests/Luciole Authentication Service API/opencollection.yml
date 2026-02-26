@@ -1,0 +1,32 @@
+opencollection: 1.0.0
+
+info:
+  name: Luciole Authentication Service API
+config:
+  proxy:
+    inherit: true
+    config:
+      protocol: http
+      hostname: ""
+      port: ""
+      auth:
+        username: ""
+        password: ""
+      bypassProxy: ""
+
+docs:
+  content: |-
+    API for user authentication, profile management, and password operations using opaque tokens.
+    Email is the unique primary identifier for all users.
+
+
+    Contact Support:
+     Name: API Support
+     Email: support@example.com
+  type: text/markdown
+bundled: false
+extensions:
+  bruno:
+    ignore:
+      - node_modules
+      - .git
