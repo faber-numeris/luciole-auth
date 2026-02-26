@@ -1,0 +1,43 @@
+info:
+  name: Generate Random User
+  type: http
+  seq: 1
+
+http:
+  method: GET
+  url: https://randomuser.me/api/?nat=ca&inc=gender,name,nat,email
+  params:
+    - name: nat
+      value: ca
+      type: query
+    - name: inc
+      value: gender,name,nat,email
+      type: query
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        var data = res.body.results[0]
+        bru.setVar("email",data.email)
+        bru.setVar("firstName", data.name.first)
+        bru.setVar("lastName", data.name.first)
+
+        const length = 12;
+        const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";
+        let password = "";
+
+        for (let i = 0; i < length; i++) {
+          const randomIndex = Math.floor(Math.random() * charset.length);
+          password += charset[randomIndex];
+        }
+
+        // Set the variable so it can be used in your request
+        bru.setVar("password", password);
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

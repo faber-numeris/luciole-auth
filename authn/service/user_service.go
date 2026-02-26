@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"github.com/faber-numeris/luciole-auth/authn/model"
 )
@@ -30,7 +31,7 @@ type IUserService interface {
 // ListUsersParams contains parameters for listing users at the service level
 type ListUsersParams struct {
 	Email             *string
-	CreatedStartRange *string
-	CreatedEndRange   *string
+	CreatedStartRange *time.Time
+	CreatedEndRange   *time.Time
 	Active            bool
 }

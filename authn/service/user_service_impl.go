@@ -73,8 +73,13 @@ func (s *UserServiceImpl) DeleteUser(ctx context.Context, userID string) error {
 }
 
 // ListUsers retrieves a list of users with optional filtering
-// TODO: Implement ListUsers method
 // assignees: rafaelsousa
 func (s *UserServiceImpl) ListUsers(ctx context.Context, params *ListUsersParams) ([]*model.User, error) {
-	panic("not implemented")
+	repoParams := &repository.ListUsersParams{
+		Email:             params.Email,
+		CreatedStartRange: params.CreatedStartRange,
+		CreatedEndRange:   params.CreatedEndRange,
+		Active:            params.Active,
+	}
+	return s.userRepo.ListUsers(ctx, repoParams)
 }
