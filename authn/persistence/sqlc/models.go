@@ -8,6 +8,14 @@ import (
 	"time"
 )
 
+type RegistrationPending struct {
+	ID            string
+	Email         string
+	Code          string
+	CodeExpiresAt time.Time
+	CreatedAt     *time.Time
+}
+
 type User struct {
 	ID           string
 	Email        string

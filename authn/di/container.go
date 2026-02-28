@@ -45,6 +45,24 @@ func ProvideHashingService() service.IHashingService {
 	return service.NewHashingService()
 }
 
+func ProvideMailService() service.IMailService {
+	return service.NewMailService(ProvideConfiguration())
+}
+
+func ProvideRegistrationRepository() repository.IRegistrationRepository {
+	db, err := database.GetInstance(ProvideConfiguration())
+	if err != nil {
+		if db != nil {
+			_ = db.Close()
+		}
+		panic(err)
+	}
+
+	repo := repository.NewRegistrationRepository(sqlc2.New(db.Pool))
+
+	return repo
+}
+
 func ProvideUserService() service.IUserService {
 
 	return service.NewUserService(ProvideUserRepository(), ProvideHashingService())
