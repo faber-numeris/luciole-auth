@@ -5,7 +5,7 @@ info:
 
 http:
   method: POST
-  url: http://{{baseUrl}}/authn/login
+  url: {{baseUrl}}/authn/login
   headers:
     - name: Content-Type
       value: application/json
@@ -29,7 +29,7 @@ settings:
 examples:
   - name: Login successful
     request:
-      url: http://{{baseUrl}}/authn/login
+      url: {{baseUrl}}/authn/login
       method: POST
       headers:
         - name: Content-Type
@@ -67,7 +67,7 @@ examples:
           }
   - name: Invalid request data
     request:
-      url: http://{{baseUrl}}/authn/login
+      url: {{baseUrl}}/authn/login
       method: POST
       headers:
         - name: Content-Type
@@ -98,7 +98,7 @@ examples:
           }
   - name: Invalid credentials
     request:
-      url: http://{{baseUrl}}/authn/login
+      url: {{baseUrl}}/authn/login
       method: POST
       headers:
         - name: Content-Type
@@ -129,7 +129,7 @@ examples:
           }
   - name: Internal server error
     request:
-      url: http://{{baseUrl}}/authn/login
+      url: {{baseUrl}}/authn/login
       method: POST
       headers:
         - name: Content-Type

@@ -9,8 +9,13 @@ import (
 )
 
 type Querier interface {
+	CreateRegistrationPending(ctx context.Context, arg CreateRegistrationPendingParams) (RegistrationPending, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	DeleteRegistrationPending(ctx context.Context, id string) error
+	DeleteRegistrationPendingByEmail(ctx context.Context, email string) error
 	DeleteUser(ctx context.Context, id string) error
+	GetRegistrationPending(ctx context.Context, id string) (RegistrationPending, error)
+	GetRegistrationPendingByEmail(ctx context.Context, email string) (RegistrationPending, error)
 	GetUser(ctx context.Context, id string) (User, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error)

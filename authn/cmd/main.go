@@ -11,22 +11,18 @@ import (
 	"syscall"
 	"time"
 
+	app "github.com/faber-numeris/luciole-auth/authn/app"
 	"github.com/faber-numeris/luciole-auth/authn/di"
 	"github.com/faber-numeris/luciole-auth/authn/persistence/database"
+	"github.com/faber-numeris/luciole-auth/authn/tools"
 	"github.com/lmittmann/tint"
 )
 
 func main() {
 
 	conf := di.ProvideConfiguration()
-	router, err := di.ProvideRouter()
-	// TODO: Create the Must function to deal with require or die constraints
-	// assignees: rafaelsousa
-	if err != nil {
-		panic(err)
-	}
+	router := tools.Must(di.ProvideRouter())
 
-	// Give log levels different colors.
 	slog.SetDefault(slog.New(
 		tint.NewHandler(os.Stderr, &tint.Options{
 			Level:      slog.LevelDebug,
@@ -37,21 +33,18 @@ func main() {
 	address := fmt.Sprintf(":%d", conf.Port())
 	slog.Info("Starting AuthN service", "address", address)
 
-	srv := &http.Server{
-		Addr:    address,
-		Handler: router,
-	}
+	srv := app.NewServer(router)
 
-	// TODO: Put this into a separate component called app that we'll be called from main.go
-	// assignees: rafaelsousa
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
 	srvErrChan := make(chan error, 1)
 	go func() {
-		if srvErr := srv.ListenAndServe(); srvErr != nil && !errors.Is(srvErr, http.ErrServerClosed) {
+		if err := srv.Run(ctx); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			srvErrChan <- err
 		}
 	}()
 
-	// Gracefully stops the server on CTRL + C actions.
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
 
@@ -63,12 +56,14 @@ func main() {
 	case <-quit:
 		slog.Info("Shutting down server...")
 
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
+		shutdownCtx, shutdownCancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer shutdownCancel()
 
-		if err := srv.Shutdown(ctx); err != nil {
+		if err := srv.Shutdown(shutdownCtx); err != nil {
 			slog.Error("Server forced to shutdown", "error", err)
 		}
+
+		cancel()
 
 		if err := database.Close(); err != nil {
 			slog.Error("Failed to close database", "error", err)
