@@ -13,8 +13,20 @@ CREATE TABLE users
     deleted_at    TIMESTAMP
 );
 
+CREATE TABLE user_confirmations
+(
+    id           CHAR(26) PRIMARY KEY DEFAULT generate_ulid(),
+    user_id      CHAR(26) UNIQUE NOT NULL REFERENCES users (id) ON DELETE CASCADE,
+    token        TEXT            NOT NULL,
+    expires_at   TIMESTAMP       NOT NULL,
+    confirmed_at TIMESTAMP,
+    created_at   TIMESTAMP            DEFAULT CURRENT_TIMESTAMP,
+    updated_at   TIMESTAMP            DEFAULT CURRENT_TIMESTAMP
+);
+
 
 -- +goose Down
 SELECT 'down SQL query';
 drop table users;
+drop table user_confirmations;
 
