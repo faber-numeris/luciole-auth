@@ -5,7 +5,7 @@ info:
 
 http:
   method: POST
-  url: {{baseUrl}}/authn/logout
+  url: http://{{baseUrl}}/authn/logout
   headers:
     - name: Accept
       value: application/json
@@ -22,7 +22,7 @@ settings:
 examples:
   - name: Logout successful
     request:
-      url: {{baseUrl}}/authn/logout
+      url: http://{{baseUrl}}/authn/logout
       method: POST
       headers:
         - name: Authorization
@@ -35,7 +35,7 @@ examples:
         data: ""
   - name: Unauthorized - Invalid or missing token
     request:
-      url: {{baseUrl}}/authn/logout
+      url: http://{{baseUrl}}/authn/logout
       method: POST
       headers:
         - name: Accept
@@ -60,7 +60,7 @@ examples:
           }
   - name: Internal server error
     request:
-      url: {{baseUrl}}/authn/logout
+      url: http://{{baseUrl}}/authn/logout
       method: POST
       headers:
         - name: Accept

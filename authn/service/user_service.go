@@ -26,6 +26,18 @@ type IUserService interface {
 
 	// ListUsers retrieves a list of users with optional filtering
 	ListUsers(ctx context.Context, params *ListUsersParams) ([]*model.User, error)
+
+	// ConfirmUserRegistration confirms a user's email based on token
+	ConfirmUserRegistration(ctx context.Context, token string) error
+
+	// RequestPasswordReset generates a password reset token for the user
+	RequestPasswordReset(ctx context.Context, email string) (string, error)
+
+	// ResetPassword resets the user's password using the reset token
+	ResetPassword(ctx context.Context, token string, newPassword string) error
+
+	// VerifyPassword verifies if the provided password matches the user's password
+	VerifyPassword(ctx context.Context, email string, password string) (*model.User, error)
 }
 
 // ListUsersParams contains parameters for listing users at the service level

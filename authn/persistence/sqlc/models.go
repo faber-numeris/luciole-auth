@@ -8,23 +8,27 @@ import (
 	"time"
 )
 
-type RegistrationPending struct {
-	ID            string
-	Email         string
-	Code          string
-	CodeExpiresAt time.Time
-	CreatedAt     *time.Time
+type User struct {
+	ID                          string
+	Email                       string
+	PasswordHash                []byte
+	FirstName                   string
+	LastName                    string
+	Locale                      string
+	Timezone                    string
+	CreatedAt                   *time.Time
+	UpdatedAt                   *time.Time
+	DeletedAt                   *time.Time
+	PasswordResetToken          *string
+	PasswordResetTokenExpiresAt *time.Time
 }
 
-type User struct {
-	ID           string
-	Email        string
-	PasswordHash []byte
-	FirstName    string
-	LastName     string
-	Locale       string
-	Timezone     string
-	CreatedAt    *time.Time
-	UpdatedAt    *time.Time
-	DeletedAt    *time.Time
+type UserConfirmation struct {
+	ID          string
+	UserID      string
+	Token       string
+	ExpiresAt   time.Time
+	ConfirmedAt *time.Time
+	CreatedAt   *time.Time
+	UpdatedAt   *time.Time
 }

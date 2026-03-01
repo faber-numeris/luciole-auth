@@ -1,4 +1,4 @@
 name: local
 variables:
   - name: baseUrl
-    value: http://localhost:8080/v1
+    value: localhost:8080/v1

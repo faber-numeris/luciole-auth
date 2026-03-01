@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   postgres_db:
     image: postgres:14
@@ -14,14 +12,6 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  mailpit:
-    image: mailpit/mailpit
-    ports:
-      - "1025:1025"
-      - "8080:8080"
-    volumes:
-      - mailpit-data:/var/lib/mailpit
-
 volumes:
   postgres_data:
-  mailpit-data:
+

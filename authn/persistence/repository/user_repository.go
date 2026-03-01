@@ -26,6 +26,27 @@ type IUserRepository interface {
 
 	// ListUsers retrieves a list of users with optional filtering
 	ListUsers(ctx context.Context, params *ListUsersParams) ([]*model.User, error)
+
+	// CreateUserConfirmation creates a new user confirmation record
+	CreateUserConfirmation(ctx context.Context, userID string, token string, expiresAt time.Time) (string, error)
+
+	// GetUserConfirmationByToken retrieves a user confirmation by token
+	GetUserConfirmationByToken(ctx context.Context, token string) (string, error)
+
+	// ConfirmUserRegistration confirms a user's registration
+	ConfirmUserRegistration(ctx context.Context, userID string) error
+
+	// DeleteUserConfirmation deletes a user confirmation record
+	DeleteUserConfirmation(ctx context.Context, userID string) error
+
+	// SetPasswordResetToken sets a password reset token for a user
+	SetPasswordResetToken(ctx context.Context, userID string, token string, expiresAt time.Time) error
+
+	// GetUserByPasswordResetToken retrieves a user by password reset token
+	GetUserByPasswordResetToken(ctx context.Context, token string) (*model.User, error)
+
+	// UpdatePassword updates the user's password
+	UpdatePassword(ctx context.Context, userID string, passwordHash []byte) error
 }
 
 // ListUsersParams contains parameters for listing users

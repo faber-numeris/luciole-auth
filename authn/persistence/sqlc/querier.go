@@ -6,20 +6,40 @@ package sqlc
 
 import (
 	"context"
+	"time"
 )
 
 type Querier interface {
-	CreateRegistrationPending(ctx context.Context, arg CreateRegistrationPendingParams) (RegistrationPending, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
-	DeleteRegistrationPending(ctx context.Context, id string) error
-	DeleteRegistrationPendingByEmail(ctx context.Context, email string) error
 	DeleteUser(ctx context.Context, id string) error
-	GetRegistrationPending(ctx context.Context, id string) (RegistrationPending, error)
-	GetRegistrationPendingByEmail(ctx context.Context, email string) (RegistrationPending, error)
 	GetUser(ctx context.Context, id string) (User, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	ListUsers(ctx context.Context, arg ListUsersParams) ([]User, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
+	SetPasswordResetToken(ctx context.Context, arg SetPasswordResetTokenParams) error
+	GetUserByPasswordResetToken(ctx context.Context, token string) (User, error)
+	UpdatePassword(ctx context.Context, arg UpdatePasswordParams) error
+	CreateUserConfirmation(ctx context.Context, arg CreateUserConfirmationParams) (UserConfirmation, error)
+	GetUserConfirmationByToken(ctx context.Context, token string) (UserConfirmation, error)
+	ConfirmUserRegistration(ctx context.Context, userID string) error
+	DeleteUserConfirmation(ctx context.Context, userID string) error
 }
 
 var _ Querier = (*Queries)(nil)
+
+type SetPasswordResetTokenParams struct {
+	UserID    string
+	Token     string
+	ExpiresAt time.Time
+}
+
+type UpdatePasswordParams struct {
+	UserID       string
+	PasswordHash []byte
+}
+
+type CreateUserConfirmationParams struct {
+	UserID    string
+	Token     string
+	ExpiresAt time.Time
+}

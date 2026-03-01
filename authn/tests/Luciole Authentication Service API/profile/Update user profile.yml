@@ -5,7 +5,7 @@ info:
 
 http:
   method: PUT
-  url: {{baseUrl}}/profile
+  url: http://{{baseUrl}}/profile
   headers:
     - name: Content-Type
       value: application/json
@@ -33,7 +33,7 @@ settings:
 examples:
   - name: Profile updated successfully
     request:
-      url: {{baseUrl}}/profile
+      url: http://{{baseUrl}}/profile
       method: PUT
       headers:
         - name: Content-Type
@@ -71,7 +71,7 @@ examples:
           }
   - name: Invalid request data
     request:
-      url: {{baseUrl}}/profile
+      url: http://{{baseUrl}}/profile
       method: PUT
       headers:
         - name: Content-Type
@@ -107,7 +107,7 @@ examples:
           }
   - name: Unauthorized - Invalid or missing token
     request:
-      url: {{baseUrl}}/profile
+      url: http://{{baseUrl}}/profile
       method: PUT
       headers:
         - name: Content-Type
@@ -143,7 +143,7 @@ examples:
           }
   - name: Email already in use
     request:
-      url: {{baseUrl}}/profile
+      url: http://{{baseUrl}}/profile
       method: PUT
       headers:
         - name: Content-Type
@@ -179,7 +179,7 @@ examples:
           }
   - name: Internal server error
     request:
-      url: {{baseUrl}}/profile
+      url: http://{{baseUrl}}/profile
       method: PUT
       headers:
         - name: Content-Type
