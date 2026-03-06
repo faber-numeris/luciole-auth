@@ -10,19 +10,29 @@ import (
 
 	"github.com/faber-numeris/luciole-auth/authn/model"
 	"github.com/faber-numeris/luciole-auth/authn/persistence/repository"
+	"github.com/faber-numeris/luciole-auth/authn/service/mail"
 )
 
 // UserServiceImpl implements the IUserService interface
 type UserServiceImpl struct {
-	userRepo       repository.IUserRepository
-	hashingService IHashingService
+	userRepo         repository.IUserRepository
+	confirmationRepo repository.IUserConfirmationRepository
+	mailService      mail.IMailService
+	hashingService   IHashingService
 }
 
 // NewUserService creates a new instance of UserServiceImpl
-func NewUserService(userRepo repository.IUserRepository, hashingService IHashingService) IUserService {
+func NewUserService(
+	userRepo repository.IUserRepository,
+	confirmationRepo repository.IUserConfirmationRepository,
+	hashingService IHashingService,
+	mailService mail.IMailService,
+) IUserService {
 	return &UserServiceImpl{
-		userRepo:       userRepo,
-		hashingService: hashingService,
+		userRepo:         userRepo,
+		confirmationRepo: confirmationRepo,
+		hashingService:   hashingService,
+		mailService:      mailService,
 	}
 }
 
@@ -40,9 +50,14 @@ func (s *UserServiceImpl) RegisterUser(ctx context.Context, user *model.User, pa
 
 	confirmationToken := generateToken()
 	expiresAt := time.Now().Add(24 * time.Hour)
-	_, err = s.userRepo.CreateUserConfirmation(ctx, createdUser.ID, confirmationToken, expiresAt)
+	confirmation, err := s.confirmationRepo.CreateUserConfirmation(ctx, createdUser.ID, confirmationToken, expiresAt)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create confirmation token: %w", err)
+	}
+	confirmation.UserEmail = createdUser.Email
+
+	if err = s.mailService.SendConfirmationEmail(ctx, *confirmation); err != nil {
+		return nil, fmt.Errorf("failed to send confirmation email: %w", err)
 	}
 
 	return createdUser, nil
@@ -146,7 +161,7 @@ func (s *UserServiceImpl) ListUsers(ctx context.Context, params *ListUsersParams
 
 // ConfirmUserRegistration confirms a user's email based on token
 func (s *UserServiceImpl) ConfirmUserRegistration(ctx context.Context, token string) error {
-	userID, err := s.userRepo.GetUserConfirmationByToken(ctx, token)
+	userID, err := s.confirmationRepo.GetUserConfirmationByToken(ctx, token)
 	if err != nil {
 		return fmt.Errorf("failed to get user by confirmation token: %w", err)
 	}
@@ -155,7 +170,7 @@ func (s *UserServiceImpl) ConfirmUserRegistration(ctx context.Context, token str
 		return errors.New("invalid or expired confirmation token")
 	}
 
-	err = s.userRepo.ConfirmUserRegistration(ctx, userID)
+	err = s.confirmationRepo.ConfirmUserRegistration(ctx, userID)
 	if err != nil {
 		return fmt.Errorf("failed to confirm user email: %w", err)
 	}
@@ -165,48 +180,12 @@ func (s *UserServiceImpl) ConfirmUserRegistration(ctx context.Context, token str
 
 // RequestPasswordReset generates a password reset token for the user
 func (s *UserServiceImpl) RequestPasswordReset(ctx context.Context, email string) (string, error) {
-	user, err := s.userRepo.GetUserByEmail(ctx, email)
-	if err != nil {
-		return "", fmt.Errorf("failed to get user by email: %w", err)
-	}
-
-	if user == nil {
-		return "", errors.New("user not found")
-	}
-
-	token := generateToken()
-	expiresAt := time.Now().Add(1 * time.Hour)
-
-	err = s.userRepo.SetPasswordResetToken(ctx, user.ID, token, expiresAt)
-	if err != nil {
-		return "", fmt.Errorf("failed to set password reset token: %w", err)
-	}
-
-	return token, nil
+	return "", errors.New("not implemented")
 }
 
 // ResetPassword resets the user's password using the reset token
 func (s *UserServiceImpl) ResetPassword(ctx context.Context, token string, newPassword string) error {
-	user, err := s.userRepo.GetUserByPasswordResetToken(ctx, token)
-	if err != nil {
-		return fmt.Errorf("failed to get user by password reset token: %w", err)
-	}
-
-	if user == nil {
-		return errors.New("invalid or expired password reset token")
-	}
-
-	passwordHash, err := s.hashingService.HashPassword(ctx, newPassword)
-	if err != nil {
-		return fmt.Errorf("failed to hash password: %w", err)
-	}
-
-	err = s.userRepo.UpdatePassword(ctx, user.ID, []byte(passwordHash))
-	if err != nil {
-		return fmt.Errorf("failed to update password: %w", err)
-	}
-
-	return nil
+	return errors.New("not implemented")
 }
 
 // VerifyPassword verifies if the provided password matches the user's password

@@ -12,6 +12,7 @@ import (
 	"github.com/faber-numeris/luciole-auth/authn/persistence/repository"
 	sqlc2 "github.com/faber-numeris/luciole-auth/authn/persistence/sqlc"
 	"github.com/faber-numeris/luciole-auth/authn/service"
+	"github.com/faber-numeris/luciole-auth/authn/service/mail"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
@@ -41,13 +42,37 @@ func ProvideUserRepository() repository.IUserRepository {
 	return repo
 }
 
+func ProvideUserConfirmationRepository() repository.IUserConfirmationRepository {
+	// Get Database Singleton
+	db, err := database.GetInstance(ProvideConfiguration())
+	if err != nil {
+		if db != nil {
+			_ = db.Close()
+		}
+		panic(err)
+	}
+
+	repo := repository.NewSQLCUserConfirmationRepository(sqlc2.New(db.Pool))
+
+	return repo
+}
+
 func ProvideHashingService() service.IHashingService {
 	return service.NewHashingService()
 }
 
-func ProvideUserService() service.IUserService {
+func ProvideMailService() mail.IMailService {
+	cfg := ProvideConfiguration()
+	return mail.NewMailpit(cfg)
+}
 
-	return service.NewUserService(ProvideUserRepository(), ProvideHashingService())
+func ProvideUserService() service.IUserService {
+	return service.NewUserService(
+		ProvideUserRepository(),
+		ProvideUserConfirmationRepository(),
+		ProvideHashingService(),
+		ProvideMailService(),
+	)
 }
 
 func ProvideAuthnService() handlers.IAuthnService {
