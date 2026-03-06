@@ -45,24 +45,6 @@ func ProvideHashingService() service.IHashingService {
 	return service.NewHashingService()
 }
 
-func ProvideMailService() service.IMailService {
-	return service.NewMailService(ProvideConfiguration())
-}
-
-func ProvideRegistrationRepository() repository.IRegistrationRepository {
-	db, err := database.GetInstance(ProvideConfiguration())
-	if err != nil {
-		if db != nil {
-			_ = db.Close()
-		}
-		panic(err)
-	}
-
-	repo := repository.NewRegistrationRepository(sqlc2.New(db.Pool))
-
-	return repo
-}
-
 func ProvideUserService() service.IUserService {
 
 	return service.NewUserService(ProvideUserRepository(), ProvideHashingService())
@@ -85,10 +67,6 @@ func ProvideHandler() (http.Handler, error) {
 }
 
 func ProvideRouter() (http.Handler, error) {
-	// -------------------------------
-	// Redoc documentation UI
-	// -------------------------------
-	// Stoplight Elements
 	specuiHandler := specui.NewHandler(
 		specui.WithTitle("Luciole Auth API"),
 		specui.WithDocsPath("/docs/authn"),
@@ -99,10 +77,9 @@ func ProvideRouter() (http.Handler, error) {
 
 	mux := chi.NewRouter()
 
-	// TODO: CORS allows all HTTPS origins which is overly permissive - should use environment-based allowed origins
-	// assignees: rafaelsousa
+	cfg := ProvideConfiguration()
 	mux.Use(cors.Handler(cors.Options{
-		AllowedOrigins:   []string{"http://localhost:*", "https://*"},
+		AllowedOrigins:   cfg.AllowedOrigins(),
 		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
 		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-Requested-With"},
 		ExposedHeaders:   []string{"Link"},

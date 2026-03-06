@@ -5,7 +5,7 @@ info:
 
 http:
   method: GET
-  url: {{baseUrl}}/users/{{userID}}
+  url: http://{{baseUrl}}/users/{{userID}}
   headers:
     - name: Accept
       value: application/json
@@ -20,7 +20,7 @@ settings:
 examples:
   - name: User retrieved successfully
     request:
-      url: {{baseUrl}}/users/:id
+      url: http://{{baseUrl}}/users/:id
       method: GET
       headers:
         - name: Accept
@@ -49,7 +49,7 @@ examples:
           }
   - name: User not found
     request:
-      url: {{baseUrl}}/users/:id
+      url: http://{{baseUrl}}/users/:id
       method: GET
       headers:
         - name: Accept
@@ -76,7 +76,7 @@ examples:
           }
   - name: Internal server error
     request:
-      url: {{baseUrl}}/users/:id
+      url: http://{{baseUrl}}/users/:id
       method: GET
       headers:
         - name: Accept

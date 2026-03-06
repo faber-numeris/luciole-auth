@@ -5,7 +5,7 @@ info:
 
 http:
   method: GET
-  url: {{baseUrl}}/authn/confirm?token=<string>
+  url: http://{{baseUrl}}/authn/confirm?token=<string>
   headers:
     - name: Accept
       value: application/json
@@ -25,7 +25,7 @@ settings:
 examples:
   - name: User successfully confirmed
     request:
-      url: {{baseUrl}}/authn/confirm?token=<string>
+      url: http://{{baseUrl}}/authn/confirm?token=<string>
       method: GET
       headers:
         - name: Accept
@@ -48,7 +48,7 @@ examples:
           }
   - name: Invalid or missing token
     request:
-      url: {{baseUrl}}/authn/confirm?token=<string>
+      url: http://{{baseUrl}}/authn/confirm?token=<string>
       method: GET
       headers:
         - name: Accept
@@ -75,7 +75,7 @@ examples:
           }
   - name: Token expired
     request:
-      url: {{baseUrl}}/authn/confirm?token=<string>
+      url: http://{{baseUrl}}/authn/confirm?token=<string>
       method: GET
       headers:
         - name: Accept
@@ -102,7 +102,7 @@ examples:
           }
   - name: Internal server error
     request:
-      url: {{baseUrl}}/authn/confirm?token=<string>
+      url: http://{{baseUrl}}/authn/confirm?token=<string>
       method: GET
       headers:
         - name: Accept

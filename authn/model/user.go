@@ -1,5 +1,7 @@
 package model
 
+import "time"
+
 type UserType string
 
 const (
@@ -36,4 +38,21 @@ type UserProfile struct {
 	LastName  string `json:"lastName,omitempty"`
 	Locale    string `json:"locale,omitempty"`
 	Timezone  string `json:"timezone,omitempty"`
+}
+
+type UserWithPassword struct {
+	User
+	PasswordHash []byte
+}
+
+type ConfirmationToken struct {
+	Token     string
+	ExpiresAt time.Time
+	UserID    string
+}
+
+type PasswordResetToken struct {
+	Token     string
+	ExpiresAt time.Time
+	UserID    string
 }
