@@ -1,0 +1,11 @@
+Confirm your email address
+
+Thank you for registering. Please confirm your email address by visiting the following link:
+
+{{.ConfirmationURL}}
+
+Or use this code: {{.Code}}
+
+If you didn't create an account, please ignore this email.
+
+This email was sent by Luciole Auth.

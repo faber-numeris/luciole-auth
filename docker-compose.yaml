@@ -15,7 +15,7 @@ services:
     restart: "no"
     entrypoint: ["goose", "-dir", "/migrations", "postgres", "postgres://postgres:postgres@postgres_db:5432/postgres?sslmode=disable", "up"]
     volumes:
-      - ./authn/migration:/migrations
+      - ./migration/authn:/migrations
     depends_on:
       postgres_db:
         condition: service_healthy
