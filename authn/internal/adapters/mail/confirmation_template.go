@@ -2,9 +2,20 @@ package mail
 
 import (
 	"bytes"
+	"embed"
 	"fmt"
+	"html/template"
 	"mime/multipart"
 	"net/textproto"
+	texttemplate "text/template"
+)
+
+//go:embed templates/confirmation_template.*
+var templatesFS embed.FS
+
+var (
+	htmlTpl = template.Must(template.ParseFS(templatesFS, "templates/confirmation_template.html"))
+	textTpl = texttemplate.Must(texttemplate.ParseFS(templatesFS, "templates/confirmation_template.txt"))
 )
 
 type ConfirmationTemplate struct {
@@ -16,61 +27,33 @@ func (t ConfirmationTemplate) Subject() string {
 	return "Confirm your email address"
 }
 
-func (t ConfirmationTemplate) BodyHTML() string {
-	return fmt.Sprintf(`<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="utf-8">
-    <style>
-        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
-        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-        .button { 
-            display: inline-block; 
-            padding: 12px 24px; 
-            background-color: #4F46E5; 
-            color: white; 
-            text-decoration: none; 
-            border-radius: 4px; 
-            margin: 20px 0;
-        }
-        .footer { font-size: 12px; color: #666; margin-top: 30px; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h2>Confirm your email address</h2>
-        <p>Thank you for registering. Please confirm your email address by clicking the button below:</p>
-        <p><a href="%s" class="button">Confirm Email</a></p>
-        <p>Or use this code: <strong>%s</strong></p>
-        <p>If you didn't create an account, please ignore this email.</p>
-        <div class="footer">
-            <p>This email was sent by Luciole Auth.</p>
-        </div>
-    </div>
-</body>
-</html>`, t.ConfirmationURL, t.Code)
+func (t ConfirmationTemplate) BodyHTML() (string, error) {
+	var buf bytes.Buffer
+	if err := htmlTpl.Execute(&buf, t); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
 }
 
-func (t ConfirmationTemplate) BodyPlainText() string {
-	return fmt.Sprintf(`Confirm your email address
-
-Thank you for registering. Please confirm your email address by visiting the following link:
-
-%s
-
-Or use this code: %s
-
-If you didn't create an account, please ignore this email.
-
-This email was sent by Luciole Auth.`, t.ConfirmationURL, t.Code)
+func (t ConfirmationTemplate) BodyPlainText() (string, error) {
+	var buf bytes.Buffer
+	if err := textTpl.Execute(&buf, t); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
 }
 
 func (t ConfirmationTemplate) BuildMail(from string, to []string) Mail {
+	body, err := t.BodyPlainText()
+	if err != nil {
+		body = "Error generating email body"
+	}
+
 	return Mail{
 		From:        from,
 		To:          to,
 		Subject:     t.Subject(),
-		Body:        t.BodyPlainText(),
+		Body:        body,
 		ContentType: "text/plain; charset=utf-8",
 	}
 }
@@ -108,7 +91,11 @@ func buildMultipartMail(tpl ConfirmationTemplate) (string, string, error) {
 	if err != nil {
 		return "", "", err
 	}
-	partText.Write([]byte(tpl.BodyPlainText()))
+	textBody, err := tpl.BodyPlainText()
+	if err != nil {
+		return "", "", err
+	}
+	partText.Write([]byte(textBody))
 
 	// 2. Create the HTML part
 	htmlHeader := make(textproto.MIMEHeader)
@@ -117,7 +104,11 @@ func buildMultipartMail(tpl ConfirmationTemplate) (string, string, error) {
 	if err != nil {
 		return "", "", err
 	}
-	partHtml.Write([]byte(tpl.BodyHTML()))
+	htmlBody, err := tpl.BodyHTML()
+	if err != nil {
+		return "", "", err
+	}
+	partHtml.Write([]byte(htmlBody))
 
 	// 3. Close to add the final --boundary--
 	writer.Close()

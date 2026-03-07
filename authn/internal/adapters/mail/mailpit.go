@@ -33,8 +33,11 @@ func (m *Mailpit) SendConfirmationEmail(ctx context.Context, confirmation domain
 	fromAddr := fmt.Sprintf("%s <%s>", fromName, from)
 	to := []string{toAddr.Address}
 
-	built := BuildConfirmationMail(fromAddr, to, confirmation.Token, confirmation.Token)
+	confirmationUrl := fmt.Sprintf(m.configuration.ConfirmationURLFormat(), confirmation.Token)
+
+	built := BuildConfirmationMail(fromAddr, to, confirmationUrl, confirmation.Token)
 	msg := built.BuildMessage()
+
 
 	addr := fmt.Sprintf("%s:%d", smtpHost, smtpPort)
 	// In the local development setup with Mailpit, there is usually no
