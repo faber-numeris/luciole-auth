@@ -9,18 +9,16 @@ import (
 )
 
 type User struct {
-	ID                          string
-	Email                       string
-	PasswordHash                []byte
-	FirstName                   string
-	LastName                    string
-	Locale                      string
-	Timezone                    string
-	CreatedAt                   *time.Time
-	UpdatedAt                   *time.Time
-	DeletedAt                   *time.Time
-	PasswordResetToken          *string
-	PasswordResetTokenExpiresAt *time.Time
+	ID           string
+	Email        string
+	PasswordHash []byte
+	FirstName    string
+	LastName     string
+	Locale       string
+	Timezone     string
+	CreatedAt    *time.Time
+	UpdatedAt    *time.Time
+	DeletedAt    *time.Time
 }
 
 type UserConfirmation struct {

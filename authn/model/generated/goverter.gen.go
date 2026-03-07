@@ -19,6 +19,23 @@ func (c *ConverterImpl) UserModelFromSQLC(source sqlc.User) (model.User, error) 
 	modelUser.Profile = extensions.SQLCUserToUserProfile(source)
 	return modelUser, nil
 }
+func (c *ConverterImpl) UserConfirmationModelFromSQLC(source sqlc.UserConfirmation) (model.UserConfirmation, error) {
+	var modelUserConfirmation model.UserConfirmation
+	modelUserConfirmation.ID = source.ID
+	modelUserConfirmation.UserID = source.UserID
+	modelUserConfirmation.Token = source.Token
+	modelUserConfirmation.ExpiresAt = source.ExpiresAt
+	if source.ConfirmedAt != nil {
+		modelUserConfirmation.ConfirmedAt = &*source.ConfirmedAt
+	}
+	if source.CreatedAt != nil {
+		modelUserConfirmation.CreatedAt = *source.CreatedAt
+	}
+	if source.UpdatedAt != nil {
+		modelUserConfirmation.UpdatedAt = *source.UpdatedAt
+	}
+	return modelUserConfirmation, nil
+}
 func (c *ConverterImpl) UserModelFromUserRequest(source gen.UserCreateRequest) (model.User, error) {
 	var modelUser model.User
 	modelUser.Email = source.Email
