@@ -56,3 +56,14 @@ type PasswordResetToken struct {
 	ExpiresAt time.Time
 	UserID    string
 }
+
+type UserConfirmation struct {
+	ID          string
+	UserID      string
+	UserEmail   string
+	Token       string
+	ExpiresAt   time.Time
+	ConfirmedAt *time.Time
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+}

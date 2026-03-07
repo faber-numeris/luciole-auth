@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"time"
 
 	"github.com/faber-numeris/luciole-auth/authn/model"
 	"github.com/faber-numeris/luciole-auth/authn/model/generated"
@@ -125,64 +124,9 @@ func (r *SQLCUserRepository) ListUsers(ctx context.Context, params *ListUsersPar
 	return result, nil
 }
 
-func (r *SQLCUserRepository) SetPasswordResetToken(ctx context.Context, userID string, token string, expiresAt time.Time) error {
-	return r.querier.SetPasswordResetToken(ctx, sqlc.SetPasswordResetTokenParams{
-		UserID:    userID,
-		Token:     token,
-		ExpiresAt: expiresAt,
-	})
-}
-
-func (r *SQLCUserRepository) GetUserByPasswordResetToken(ctx context.Context, token string) (*model.User, error) {
-	sqlcUser, err := r.querier.GetUserByPasswordResetToken(ctx, token)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, err
-	}
-
-	result, err := conversion.UserModelFromSQLC(sqlcUser)
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
 func (r *SQLCUserRepository) UpdatePassword(ctx context.Context, userID string, passwordHash []byte) error {
 	return r.querier.UpdatePassword(ctx, sqlc.UpdatePasswordParams{
-		UserID:       userID,
-		PasswordHash: passwordHash,
+		Userid:       userID,
+		Passwordhash: passwordHash,
 	})
-}
-
-func (r *SQLCUserRepository) CreateUserConfirmation(ctx context.Context, userID string, token string, expiresAt time.Time) (string, error) {
-	confirmation, err := r.querier.CreateUserConfirmation(ctx, sqlc.CreateUserConfirmationParams{
-		UserID:    userID,
-		Token:     token,
-		ExpiresAt: expiresAt,
-	})
-	if err != nil {
-		return "", err
-	}
-	return confirmation.ID, nil
-}
-
-func (r *SQLCUserRepository) GetUserConfirmationByToken(ctx context.Context, token string) (string, error) {
-	confirmation, err := r.querier.GetUserConfirmationByToken(ctx, token)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return "", nil
-		}
-		return "", err
-	}
-	return confirmation.UserID, nil
-}
-
-func (r *SQLCUserRepository) ConfirmUserRegistration(ctx context.Context, userID string) error {
-	return r.querier.ConfirmUserRegistration(ctx, userID)
-}
-
-func (r *SQLCUserRepository) DeleteUserConfirmation(ctx context.Context, userID string) error {
-	return r.querier.DeleteUserConfirmation(ctx, userID)
 }

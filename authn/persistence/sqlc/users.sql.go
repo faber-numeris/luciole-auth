@@ -13,7 +13,7 @@ import (
 const createUser = `-- name: CreateUser :one
 INSERT INTO users(email, password_hash)
      VALUES ($1::TEXT, $2::BYTEA)
-  RETURNING id, email, password_hash, first_name, last_name, locale, timezone, created_at, updated_at, deleted_at, password_reset_token, password_reset_token_expires_at
+  RETURNING id, email, password_hash, first_name, last_name, locale, timezone, created_at, updated_at, deleted_at
 `
 
 type CreateUserParams struct {
@@ -35,8 +35,6 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
-		&i.PasswordResetToken,
-		&i.PasswordResetTokenExpiresAt,
 	)
 	return i, err
 }
@@ -62,9 +60,7 @@ SELECT id,
        timezone,
        created_at,
        updated_at,
-       deleted_at,
-       password_reset_token,
-       password_reset_token_expires_at
+       deleted_at
 FROM users
 WHERE id = $1::TEXT
 LIMIT 1
@@ -84,18 +80,16 @@ func (q *Queries) GetUser(ctx context.Context, id string) (User, error) {
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
-		&i.PasswordResetToken,
-		&i.PasswordResetTokenExpiresAt,
 	)
 	return i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, password_hash, first_name, last_name, locale, timezone, created_at, updated_at, deleted_at, password_reset_token, password_reset_token_expires_at
+SELECT id, email, password_hash, first_name, last_name, locale, timezone, created_at, updated_at, deleted_at
   FROM users
  WHERE email = $1::TEXT
    AND deleted_at is NULL
-  LIMIT 1
+ LIMIT 1
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -112,8 +106,6 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
-		&i.PasswordResetToken,
-		&i.PasswordResetTokenExpiresAt,
 	)
 	return i, err
 }
@@ -128,9 +120,7 @@ const listUsers = `-- name: ListUsers :many
          timezone,
          created_at,
          updated_at,
-         deleted_at,
-         password_reset_token,
-         password_reset_token_expires_at
+         deleted_at
     FROM users
    WHERE ($1::TEXT IS NULL OR email = $1)
      AND ($2::TIMESTAMP IS NULL OR created_at >= $2::TIMESTAMP)
@@ -170,8 +160,6 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, e
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
-			&i.PasswordResetToken,
-			&i.PasswordResetTokenExpiresAt,
 		); err != nil {
 			return nil, err
 		}
@@ -181,6 +169,23 @@ func (q *Queries) ListUsers(ctx context.Context, arg ListUsersParams) ([]User, e
 		return nil, err
 	}
 	return items, nil
+}
+
+const updatePassword = `-- name: UpdatePassword :exec
+UPDATE users
+SET password_hash = $1::BYTEA,
+    updated_at = now()
+WHERE id = $2::TEXT
+`
+
+type UpdatePasswordParams struct {
+	Passwordhash []byte
+	Userid       string
+}
+
+func (q *Queries) UpdatePassword(ctx context.Context, arg UpdatePasswordParams) error {
+	_, err := q.db.Exec(ctx, updatePassword, arg.Passwordhash, arg.Userid)
+	return err
 }
 
 const updateUser = `-- name: UpdateUser :one
@@ -193,7 +198,7 @@ const updateUser = `-- name: UpdateUser :one
            timezone      = $6::TEXT,
            updated_at    = now()
      WHERE id = $7::TEXT
- RETURNING id, email, password_hash, first_name, last_name, locale, timezone, created_at, updated_at, deleted_at, password_reset_token, password_reset_token_expires_at
+ RETURNING id, email, password_hash, first_name, last_name, locale, timezone, created_at, updated_at, deleted_at
 `
 
 type UpdateUserParams struct {
@@ -228,129 +233,6 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
-		&i.PasswordResetToken,
-		&i.PasswordResetTokenExpiresAt,
 	)
 	return i, err
-}
-
-const setPasswordResetToken = `-- name: SetPasswordResetToken :exec
-UPDATE users
-SET password_reset_token = $1::TEXT,
-    password_reset_token_expires_at = $2::TIMESTAMP,
-    updated_at = now()
-WHERE id = $3::TEXT
-`
-
-func (q *Queries) SetPasswordResetToken(ctx context.Context, arg SetPasswordResetTokenParams) error {
-	_, err := q.db.Exec(ctx, setPasswordResetToken, arg.Token, arg.ExpiresAt, arg.UserID)
-	return err
-}
-
-const getUserByPasswordResetToken = `-- name: GetUserByPasswordResetToken :one
-SELECT id, email, password_hash, first_name, last_name, locale, timezone, created_at, updated_at, deleted_at, password_reset_token, password_reset_token_expires_at
-  FROM users
- WHERE password_reset_token = $1::TEXT
-   AND password_reset_token_expires_at > now()
-  LIMIT 1
-`
-
-func (q *Queries) GetUserByPasswordResetToken(ctx context.Context, token string) (User, error) {
-	row := q.db.QueryRow(ctx, getUserByPasswordResetToken, token)
-	var i User
-	err := row.Scan(
-		&i.ID,
-		&i.Email,
-		&i.PasswordHash,
-		&i.FirstName,
-		&i.LastName,
-		&i.Locale,
-		&i.Timezone,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.DeletedAt,
-		&i.PasswordResetToken,
-		&i.PasswordResetTokenExpiresAt,
-	)
-	return i, err
-}
-
-const updatePassword = `-- name: UpdatePassword :exec
-UPDATE users
-SET password_hash = $1::BYTEA,
-    password_reset_token = NULL,
-    password_reset_token_expires_at = NULL,
-    updated_at = now()
-WHERE id = $2::TEXT
-`
-
-func (q *Queries) UpdatePassword(ctx context.Context, arg UpdatePasswordParams) error {
-	_, err := q.db.Exec(ctx, updatePassword, arg.PasswordHash, arg.UserID)
-	return err
-}
-
-const createUserConfirmation = `-- name: CreateUserConfirmation :one
-INSERT INTO user_confirmations(user_id, token, expires_at)
-     VALUES ($1::TEXT, $2::TEXT, $3::TIMESTAMP)
-  RETURNING id, user_id, token, expires_at, confirmed_at, created_at, updated_at
-`
-
-func (q *Queries) CreateUserConfirmation(ctx context.Context, arg CreateUserConfirmationParams) (UserConfirmation, error) {
-	row := q.db.QueryRow(ctx, createUserConfirmation, arg.UserID, arg.Token, arg.ExpiresAt)
-	var i UserConfirmation
-	err := row.Scan(
-		&i.ID,
-		&i.UserID,
-		&i.Token,
-		&i.ExpiresAt,
-		&i.ConfirmedAt,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const getUserConfirmationByToken = `-- name: GetUserConfirmationByToken :one
-SELECT id, user_id, token, expires_at, confirmed_at, created_at, updated_at
-  FROM user_confirmations
- WHERE token = $1::TEXT
-   AND expires_at > now()
-   AND confirmed_at IS NULL
- LIMIT 1
-`
-
-func (q *Queries) GetUserConfirmationByToken(ctx context.Context, token string) (UserConfirmation, error) {
-	row := q.db.QueryRow(ctx, getUserConfirmationByToken, token)
-	var i UserConfirmation
-	err := row.Scan(
-		&i.ID,
-		&i.UserID,
-		&i.Token,
-		&i.ExpiresAt,
-		&i.ConfirmedAt,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
-}
-
-const confirmUserRegistration = `-- name: ConfirmUserRegistration :exec
-UPDATE user_confirmations
-SET confirmed_at = now(),
-    updated_at = now()
-WHERE user_id = $1::TEXT
-`
-
-func (q *Queries) ConfirmUserRegistration(ctx context.Context, userID string) error {
-	_, err := q.db.Exec(ctx, confirmUserRegistration, userID)
-	return err
-}
-
-const deleteUserConfirmation = `-- name: DeleteUserConfirmation :exec
-DELETE FROM user_confirmations WHERE user_id = $1::TEXT
-`
-
-func (q *Queries) DeleteUserConfirmation(ctx context.Context, userID string) error {
-	_, err := q.db.Exec(ctx, deleteUserConfirmation, userID)
-	return err
 }

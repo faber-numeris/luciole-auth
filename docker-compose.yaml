@@ -1,8 +1,36 @@
 services:
+  mailpit:
+    image: axllent/mailpit
+    container_name: mailpit_container
+    restart: unless-stopped
+    environment:
+      - MP_VERBOSE=true
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+
+  migration:
+    image: juhokoskela/goose:latest
+    container_name: migration_container
+    restart: "no"
+    entrypoint: ["goose", "-dir", "/migrations", "postgres", "postgres://postgres:postgres@postgres_db:5432/postgres?sslmode=disable", "up"]
+    volumes:
+      - ./authn/migration:/migrations
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+
+
   postgres_db:
     image: postgres:14
     container_name: postgres_container
     restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d postgres" ] # Command to check health
+      interval: 5s     # How often to run the check
+      timeout: 5s      # Max time allowed for the check to run
+      retries: 5       # Number of consecutive failures before marking as "unhealthy"
+      start_period: 10s # Grace period for initialization
     ports:
       - "5432:5432"
     environment:
@@ -14,4 +42,3 @@ services:
 
 volumes:
   postgres_data:
-
