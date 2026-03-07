@@ -14,7 +14,7 @@
       </ENTRIES>
     </EXTENSION>
     <kind value="PACKAGE" />
-    <package value="github.com/faber-numeris/luciole-auth/authn/cmd" />
+    <package value="github.com/faber-numeris/luciole-auth/authn/adapters/cmd" />
     <directory value="$PROJECT_DIR$" />
     <filePath value="$PROJECT_DIR$/authn/cmd/main.go" />
     <pty_enabled value="true" />
