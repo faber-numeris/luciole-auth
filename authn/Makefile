@@ -36,15 +36,14 @@ migrate-all-down:
 	$(GOOSE) -dir $(MIGRATION_DIR) postgres "$(DB_CONNECTION)" down
 
 sqlc:
-	rm -rf persistence/sqlc/*.go
+	rm -rf internal/adapters/persistence/postgres/sqlc/*.go
 	go run github.com/sqlc-dev/sqlc/cmd/sqlc@latest generate
 
 goverter:
-	go run github.com/jmattheis/goverter/cmd/goverter@latest gen github.com/faber-numeris/luciole-auth/authn/model
+	go run github.com/jmattheis/goverter/cmd/goverter@latest gen github.com/faber-numeris/luciole-auth/authn/internal/platform/mapper
 
 openapi:
 	@echo "Generating files..."
-	go run github.com/ogen-go/ogen/cmd/ogen@latest --target api/gen --clean api/openapi.yaml
+	go run github.com/ogen-go/ogen/cmd/ogen@latest --target internal/adapters/http/api/gen --clean internal/adapters/http/api/openapi.yaml
 
 .PHONY: create-migration migrate-one-up migrate-all-up migrate-one-down migrate-all-down clean-migrations sqlc generate-goverter
-
