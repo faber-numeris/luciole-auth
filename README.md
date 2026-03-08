@@ -4,131 +4,86 @@ AuthN and AuthZ components used on the luciole ecosystem.
 
 ## Project Overview
 
-`luciole-auth` is the central authentication and authorization service for the Luciole ecosystem. It currently focus on authentication (AuthN) through the `authn` service.
+`luciole-auth` is the central authentication and authorization service for the Luciole ecosystem. It currently focuses on authentication (AuthN) through the `authn` service.
+
+The project follows a **Hexagonal Architecture** (Ports and Adapters) to ensure a clean separation between business logic and infrastructure concerns.
+
+## Hexagonal Architecture
+
+This project is organized into layers to maintain a strict dependency rule: **inner layers never depend on outer layers.**
+
+1.  **Domain (`internal/domain`)**: Pure business logic and entities. Zero dependencies on other internal packages or external frameworks.
+2.  **Application (`internal/app`)**: Orchestrates business use cases. It depends only on the Domain and defines **Ports** (interfaces) for the infrastructure it needs (e.g., repositories, mailers).
+3.  **Ports (`internal/app/ports`)**: Interfaces defined by the application layer that must be implemented by the infrastructure/adapters layer.
+4.  **Adapters (`internal/adapters`)**: Implementations of the Ports.
+    *   **httpapi**: Implements the HTTP/OpenAPI server (using `ogen`).
+    *   **postgres**: Implements the repository interfaces using `sqlc` and PostgreSQL.
+    *   **mail**: Implements the mailer interface.
+5.  **Infrastructure (`internal/infrastructure`)**: General-purpose technical concerns like configuration loading and database connection management.
+6.  **Cmd (`cmd/authn`)**: The entry point. `app.go` in this directory is the **only** place where all layers are wired together (Dependency Injection).
 
 ## Technical Stack
 
-- **Language:** [Go](https://go.dev/) (1.24.8+)
+- **Language:** [Go](https://go.dev/) (1.24+)
 - **Database:** [PostgreSQL](https://www.postgresql.org/)
-- **Infrastructure:** [Docker](https://www.docker.com/) & [Docker Compose](https://docs.docker.com/compose/)
-- **API Specification:** [OpenAPI 3.0](https://swagger.io/specification/) (located at `api/openapi.yaml`)
+- **API Specification:** [OpenAPI 3.0](https://swagger.io/specification/)
 - **Code Generation:**
   - [sqlc](https://sqlc.dev/) for type-safe SQL queries.
   - [ogen](https://ogen.dev/) for OpenAPI-based code generation.
   - [goverter](https://github.com/jmattheis/goverter) for type-safe struct conversion.
 - **Migrations:** [goose](https://github.com/pressly/goose) for database versioning.
 
-## Development Setup
+## Project Structure
 
-### Prerequisites
-
-- **Go** 1.24.8 or later
-- **Docker** and **Docker Compose**
-- **Make** (for running build scripts)
-
-### Required Tools
-
-Install the following Go-based tools:
-
-```bash
-# Install sqlc for type-safe SQL generation
-go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
-
-# Install ogen for OpenAPI code generation  
-go install github.com/ogen-go/ogen/cmd/ogen@latest
-
-# Install goose for database migrations
-go install github.com/pressly/goose/v3/cmd/goose@latest
-
-# Install goverter for type-safe struct conversion
-go install github.com/jmattheis/goverter/cmd/goverter@v1.9.2
+```
+authn/
+├── cmd/authn/              # Entry point & dependency wiring
+├── internal/
+│   ├── domain/             # Pure entities (User, etc.)
+│   ├── app/                # Business logic & services
+│   │   └── ports/          # Interfaces (Repository, Mailer)
+│   ├── adapters/           # External implementations
+│   │   ├── httpapi/        # HTTP Handlers & OpenAPI
+│   │   ├── postgres/       # SQLC Repositories & Migrations
+│   │   └── mail/           # SMTP/Mailpit implementations
+│   ├── infrastructure/     # Config & DB connection init
+│   └── platform/           # Shared utilities (Mappers, etc.)
+├── Makefile                # Generation and migration tasks
+└── sqlc.yaml               # sqlc configuration
 ```
 
-Make sure `$(go env GOPATH)/bin` is in your `PATH`.
+## Development Workflow
 
-### Database Setup
+### Code Generation
 
-1. Start the PostgreSQL database using Docker Compose:
-   ```bash
-   docker compose up -d
-   ```
-   *Note: This starts PostgreSQL with default credentials (`postgres:postgres` on `localhost:5432`).*
-
-2. Create the database:
-   ```bash
-   createdb postgres
-   ```
-
-### Development Workflow
-
-#### Database Migrations
+We use several generators to maintain type safety:
 
 ```bash
-# Create a new migration
-make create-migration name=migration_name
+# Generate API code from OpenAPI spec
+make generate-oas
 
-# Run all migrations
+# Generate type-safe SQL code from queries
+make generate-sqlc
+
+# Generate type-safe struct mappers
+make generate-mappers
+```
+
+### Database Migrations
+
+Migrations are located in `authn/internal/adapters/postgres/migrations`.
+
+```bash
+# Run all migrations up
 make migrate-all-up
-
-# Run one migration
-make migrate-one-up
-
-# Revert one migration
-make migrate-one-down
 
 # Revert all migrations
 make migrate-all-down
 ```
 
-#### Code Generation
-
-```bash
-# Generate type-safe SQL code from queries
-make generate-sqlc
-
-# Generate API code from OpenAPI spec (located at api/openapi.yaml)
-make generate
-```
-
-#### Running the Application
+### Running the Application
 
 ```bash
 cd authn
-go run ./cmd/main.go
+go run ./cmd/authn
 ```
-
-### Environment Configuration
-
-The application uses environment variables for configuration. You can create a `.env` file in the `authn` directory.
-
-## Project Structure
-
-```
-luciole-auth/
-├── api/
-│   ├── gen/                # Generated API code from OpenAPI spec
-│   └── openapi.yaml        # OpenAPI specification (API definitions)
-├── authn/                  # Main authentication service
-│   ├── cmd/                # Application entry point
-│   ├── configuration/      # Configuration handling
-│   ├── di/                 # Dependency injection
-│   ├── handlers/           # API handlers (OpenAPI implementation)
-│   ├── migration/          # Database migrations (SQL files)
-│   ├── model/              # Domain models and conversions
-│   ├── persistence/        # Data access layer
-│   │   ├── database/       # DB connection handling
-│   │   ├── queries/        # SQL queries for sqlc
-│   │   ├── repository/     # Repository pattern implementation
-│   │   └── sqlc/           # Generated SQL code
-│   ├── service/            # Business logic (services)
-│   └── sqlc.yaml           # sqlc configuration
-├── docker-compose.yaml     # Infrastructure setup (PostgreSQL)
-├── Makefile                # Build and generation tasks
-├── go.mod                  # Go module definition
-└── README.md               # Project documentation
-```
-
-## Roadmap
-
-- [ ] Develop a lightweight **IAM server** to handle Identity and Authentication (AuthN).
-- [ ] Integrate and leverage **[OpenFGA](https://openfga.dev/)** as the core Authorization engine (AuthZ) for fine-grained access control.

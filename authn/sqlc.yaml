@@ -1,14 +1,14 @@
 version: "2"
 sql:
   - engine: "postgresql"
-    queries: "internal/adapters/persistence/postgres/queries"
-    schema: "migration"
+    queries: "internal/adapters/postgres/queries"
+    schema: "internal/adapters/postgres/migrations"
     database:
       uri: "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
     gen:
       go:
-        package: "sqlc"
-        out: "internal/adapters/persistence/postgres/sqlc"
+        package: "gen"
+        out: "internal/adapters/postgres/gen"
         sql_package: "pgx/v5"
         emit_pointers_for_null_types: true
         emit_interface: true

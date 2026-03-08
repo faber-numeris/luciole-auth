@@ -3,8 +3,8 @@ package extensions
 import (
 	"time"
 
-	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/http/api/gen"
-	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/persistence/postgres/sqlc"
+	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/httpapi/gen"
+	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/postgres/gen"
 	"github.com/faber-numeris/luciole-auth/authn/internal/domain"
 )
 
@@ -51,7 +51,7 @@ func UserTypeToApiUserType(t domain.UserType) api.UserType {
 	}
 }
 
-func SQLCUserToUserProfile(user sqlc.User) *domain.UserProfile {
+func SQLCUserToUserProfile(user gen.User) *domain.UserProfile {
 	if user.FirstName == "" && user.LastName == "" && user.Locale == "" && user.Timezone == "" {
 		return nil
 	}

@@ -7,9 +7,13 @@ import (
 	"net/smtp"
 	"strings"
 
-	"github.com/faber-numeris/luciole-auth/authn/internal/bootstrap/config"
+	"github.com/faber-numeris/luciole-auth/authn/internal/app/ports"
 	"github.com/faber-numeris/luciole-auth/authn/internal/domain"
+	"github.com/faber-numeris/luciole-auth/authn/internal/infrastructure/config"
 )
+
+// Verify at compile time that Mailpit implements ports.Mailer
+var _ ports.Mailer = (*Mailpit)(nil)
 
 type Mailpit struct {
 	configuration config.IMailConfig
@@ -38,7 +42,6 @@ func (m *Mailpit) SendConfirmationEmail(ctx context.Context, confirmation domain
 	built := BuildConfirmationMail(fromAddr, to, confirmationUrl, confirmation.Token)
 	msg := built.BuildMessage()
 
-
 	addr := fmt.Sprintf("%s:%d", smtpHost, smtpPort)
 	// In the local development setup with Mailpit, there is usually no
 	// authentication or TLS required.
@@ -47,5 +50,4 @@ func (m *Mailpit) SendConfirmationEmail(ctx context.Context, confirmation domain
 
 	// Send the email
 	return smtp.SendMail(addr, nil, from, to, []byte(msg))
-
 }

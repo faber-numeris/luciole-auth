@@ -1,8 +1,8 @@
 package mapper
 
 import (
-	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/http/api/gen"
-	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/persistence/postgres/sqlc"
+	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/httpapi/gen"
+	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/postgres/gen"
 	"github.com/faber-numeris/luciole-auth/authn/internal/domain"
 	"github.com/google/uuid"
 )
@@ -41,13 +41,15 @@ type Converter interface {
 
 	// goverter:ignore Type Contacts
 	// goverter:map . Profile
-	UserModelFromSQLC(user sqlc.User) (domain.User, error)
+	UserModelFromSQLC(user gen.User) (domain.User, error)
 
+	// goverter:ignore UserEmail
+	UserConfirmationModelFromSQLC(confirmation gen.UserConfirmation) (domain.UserConfirmation, error)
 	/*=================================================
 	  Conversions from Model to SQLC types
 	 ==================================================*/
 
 	// goverter:ignore PasswordHash CreatedAt UpdatedAt DeletedAt
 	// goverter:autoMap Profile
-	UserModelToSQLC(user domain.User) (sqlc.User, error)
+	UserModelToSQLC(user domain.User) (gen.User, error)
 }

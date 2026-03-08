@@ -1,28 +1,26 @@
-package handlers
+package httpapi
 
 import (
 	"context"
 	"errors"
 	"log/slog"
 
-	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/http/api/gen"
+	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/httpapi/gen"
 )
 
-type ISecurityService = api.SecurityHandler
-
-type SecurityService struct {
+type SecurityHandler struct {
 	api.UnimplementedHandler
 }
 
-func NewSecurityService() ISecurityService {
-	return &SecurityService{}
+func NewSecurityHandler() *SecurityHandler {
+	return &SecurityHandler{}
 }
 
 type userContextKey string
 
 const UserIDKey userContextKey = "user_id"
 
-func (s SecurityService) HandleBearerAuth(
+func (s SecurityHandler) HandleBearerAuth(
 	ctx context.Context,
 	operationName api.OperationName,
 	t api.BearerAuth,

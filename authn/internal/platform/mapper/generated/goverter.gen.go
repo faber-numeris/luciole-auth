@@ -4,39 +4,34 @@
 package generated
 
 import (
-	gen "github.com/faber-numeris/luciole-auth/authn/internal/adapters/http/api/gen"
-	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/persistence/postgres/sqlc"
-	"github.com/faber-numeris/luciole-auth/authn/internal/domain"
-	"github.com/faber-numeris/luciole-auth/authn/internal/platform/mapper/extensions"
+	gen1 "github.com/faber-numeris/luciole-auth/authn/internal/adapters/httpapi/gen"
+	gen "github.com/faber-numeris/luciole-auth/authn/internal/adapters/postgres/gen"
+	domain "github.com/faber-numeris/luciole-auth/authn/internal/domain"
+	extensions "github.com/faber-numeris/luciole-auth/authn/internal/platform/mapper/extensions"
+	"time"
 )
 
 type ConverterImpl struct{}
 
-func (c *ConverterImpl) UserModelFromSQLC(source sqlc.User) (domain.User, error) {
+func (c *ConverterImpl) UserConfirmationModelFromSQLC(source gen.UserConfirmation) (domain.UserConfirmation, error) {
+	var domainUserConfirmation domain.UserConfirmation
+	domainUserConfirmation.ID = source.ID
+	domainUserConfirmation.UserID = source.UserID
+	domainUserConfirmation.Token = source.Token
+	domainUserConfirmation.ExpiresAt = source.ExpiresAt
+	domainUserConfirmation.ConfirmedAt = source.ConfirmedAt
+	domainUserConfirmation.CreatedAt = c.pTimeTimeToTimeTime(source.CreatedAt)
+	domainUserConfirmation.UpdatedAt = c.pTimeTimeToTimeTime(source.UpdatedAt)
+	return domainUserConfirmation, nil
+}
+func (c *ConverterImpl) UserModelFromSQLC(source gen.User) (domain.User, error) {
 	var domainUser domain.User
 	domainUser.ID = source.ID
 	domainUser.Email = source.Email
 	domainUser.Profile = extensions.SQLCUserToUserProfile(source)
 	return domainUser, nil
 }
-func (c *ConverterImpl) UserConfirmationModelFromSQLC(source sqlc.UserConfirmation) (domain.UserConfirmation, error) {
-	var domainUserConfirmation domain.UserConfirmation
-	domainUserConfirmation.ID = source.ID
-	domainUserConfirmation.UserID = source.UserID
-	domainUserConfirmation.Token = source.Token
-	domainUserConfirmation.ExpiresAt = source.ExpiresAt
-	if source.ConfirmedAt != nil {
-		domainUserConfirmation.ConfirmedAt = &*source.ConfirmedAt
-	}
-	if source.CreatedAt != nil {
-		domainUserConfirmation.CreatedAt = *source.CreatedAt
-	}
-	if source.UpdatedAt != nil {
-		domainUserConfirmation.UpdatedAt = *source.UpdatedAt
-	}
-	return domainUserConfirmation, nil
-}
-func (c *ConverterImpl) UserModelFromUserRequest(source gen.UserCreateRequest) (domain.User, error) {
+func (c *ConverterImpl) UserModelFromUserRequest(source gen1.UserCreateRequest) (domain.User, error) {
 	var domainUser domain.User
 	domainUser.Email = source.Email
 	pDomainUserProfile, err := c.apiUserCreateRequestToPDomainUserProfile(source)
@@ -46,8 +41,8 @@ func (c *ConverterImpl) UserModelFromUserRequest(source gen.UserCreateRequest) (
 	domainUser.Profile = pDomainUserProfile
 	return domainUser, nil
 }
-func (c *ConverterImpl) UserModelToApiUser(source domain.User) (gen.User, error) {
-	var apiUser gen.User
+func (c *ConverterImpl) UserModelToApiUser(source domain.User) (gen1.User, error) {
+	var apiUser gen1.User
 	apiUser.ID = extensions.StringToULID(source.ID)
 	apiUser.Type = extensions.UserTypeToApiUserType(source.Type)
 	apiUser.Email = source.Email
@@ -73,41 +68,41 @@ func (c *ConverterImpl) UserModelToApiUser(source domain.User) (gen.User, error)
 	apiUser.Timezone = c.pStringToApiOptString(pString4)
 	return apiUser, nil
 }
-func (c *ConverterImpl) UserModelToSQLC(source domain.User) (sqlc.User, error) {
-	var sqlcUser sqlc.User
-	sqlcUser.ID = source.ID
-	sqlcUser.Email = source.Email
+func (c *ConverterImpl) UserModelToSQLC(source domain.User) (gen.User, error) {
+	var genUser gen.User
+	genUser.ID = source.ID
+	genUser.Email = source.Email
 	var pString *string
 	if source.Profile != nil {
 		pString = &source.Profile.FirstName
 	}
 	if pString != nil {
-		sqlcUser.FirstName = *pString
+		genUser.FirstName = *pString
 	}
 	var pString2 *string
 	if source.Profile != nil {
 		pString2 = &source.Profile.LastName
 	}
 	if pString2 != nil {
-		sqlcUser.LastName = *pString2
+		genUser.LastName = *pString2
 	}
 	var pString3 *string
 	if source.Profile != nil {
 		pString3 = &source.Profile.Locale
 	}
 	if pString3 != nil {
-		sqlcUser.Locale = *pString3
+		genUser.Locale = *pString3
 	}
 	var pString4 *string
 	if source.Profile != nil {
 		pString4 = &source.Profile.Timezone
 	}
 	if pString4 != nil {
-		sqlcUser.Timezone = *pString4
+		genUser.Timezone = *pString4
 	}
-	return sqlcUser, nil
+	return genUser, nil
 }
-func (c *ConverterImpl) apiUserCreateRequestToPDomainUserProfile(source gen.UserCreateRequest) (*domain.UserProfile, error) {
+func (c *ConverterImpl) apiUserCreateRequestToPDomainUserProfile(source gen1.UserCreateRequest) (*domain.UserProfile, error) {
 	var domainUserProfile domain.UserProfile
 	xstring, err := extensions.OptStringToString(source.FirstName)
 	if err != nil {
@@ -131,10 +126,17 @@ func (c *ConverterImpl) apiUserCreateRequestToPDomainUserProfile(source gen.User
 	domainUserProfile.Timezone = xstring4
 	return &domainUserProfile, nil
 }
-func (c *ConverterImpl) pStringToApiOptString(source *string) gen.OptString {
-	var apiOptString gen.OptString
+func (c *ConverterImpl) pStringToApiOptString(source *string) gen1.OptString {
+	var apiOptString gen1.OptString
 	if source != nil {
 		apiOptString = extensions.StringToOptstring(*source)
 	}
 	return apiOptString
+}
+func (c *ConverterImpl) pTimeTimeToTimeTime(source *time.Time) time.Time {
+	var timeTime time.Time
+	if source != nil {
+		timeTime = (*source)
+	}
+	return timeTime
 }
