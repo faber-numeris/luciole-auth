@@ -1,4 +1,4 @@
-package application
+package app
 
 import (
 	"context"
@@ -8,13 +8,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/faber-numeris/luciole-auth/authn/internal/app/ports"
 	"github.com/faber-numeris/luciole-auth/authn/internal/domain"
-	"github.com/faber-numeris/luciole-auth/authn/internal/ports/messaging"
-	"github.com/faber-numeris/luciole-auth/authn/internal/ports/repository"
 )
 
-// IUserService defines the interface for user business logic operations
-type IUserService interface {
+// UserService defines the interface for user business logic operations
+type UserService interface {
 	// RegisterUser creates a new user account
 	RegisterUser(ctx context.Context, user *domain.User, password string) (*domain.User, error)
 
@@ -54,22 +53,22 @@ type ListUsersParams struct {
 	Active            bool
 }
 
-// UserService implements the IUserService interface
-type UserService struct {
-	userRepo         repository.IUserRepository
-	confirmationRepo repository.IUserConfirmationRepository
-	mailService      messaging.IMailService
-	hashingService   IHashingService
+// userService implements the UserService interface
+type userService struct {
+	userRepo         ports.UserRepository
+	confirmationRepo ports.UserConfirmationRepository
+	mailService      ports.Mailer
+	hashingService   HashingService
 }
 
 // NewUserService creates a new instance of UserService
 func NewUserService(
-	userRepo repository.IUserRepository,
-	confirmationRepo repository.IUserConfirmationRepository,
-	hashingService IHashingService,
-	mailService messaging.IMailService,
-) IUserService {
-	return &UserService{
+	userRepo ports.UserRepository,
+	confirmationRepo ports.UserConfirmationRepository,
+	hashingService HashingService,
+	mailService ports.Mailer,
+) UserService {
+	return &userService{
 		userRepo:         userRepo,
 		confirmationRepo: confirmationRepo,
 		hashingService:   hashingService,
@@ -78,7 +77,7 @@ func NewUserService(
 }
 
 // RegisterUser creates a new user account
-func (s *UserService) RegisterUser(ctx context.Context, user *domain.User, password string) (*domain.User, error) {
+func (s *userService) RegisterUser(ctx context.Context, user *domain.User, password string) (*domain.User, error) {
 	passwordHash, err := s.hashingService.HashPassword(ctx, password)
 	if err != nil {
 		return nil, fmt.Errorf("failed to hash password: %w", err)
@@ -105,7 +104,7 @@ func (s *UserService) RegisterUser(ctx context.Context, user *domain.User, passw
 }
 
 // GetUserByID retrieves a user by their ID
-func (s *UserService) GetUserByID(ctx context.Context, id string) (*domain.User, error) {
+func (s *userService) GetUserByID(ctx context.Context, id string) (*domain.User, error) {
 	user, err := s.userRepo.GetUserByID(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user by id: %w", err)
@@ -119,7 +118,7 @@ func (s *UserService) GetUserByID(ctx context.Context, id string) (*domain.User,
 }
 
 // GetUserByEmail retrieves a user by their email
-func (s *UserService) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
+func (s *userService) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
 	user, err := s.userRepo.GetUserByEmail(ctx, email)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user by email: %w", err)
@@ -133,7 +132,7 @@ func (s *UserService) GetUserByEmail(ctx context.Context, email string) (*domain
 }
 
 // UpdateUserProfile updates an existing user's profile
-func (s *UserService) UpdateUserProfile(ctx context.Context, userID string, req *domain.User) (*domain.User, error) {
+func (s *userService) UpdateUserProfile(ctx context.Context, userID string, req *domain.User) (*domain.User, error) {
 	existingUser, err := s.userRepo.GetUserByID(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user: %w", err)
@@ -170,7 +169,7 @@ func (s *UserService) UpdateUserProfile(ctx context.Context, userID string, req 
 }
 
 // DeleteUser deactivates a user account
-func (s *UserService) DeleteUser(ctx context.Context, userID string) error {
+func (s *userService) DeleteUser(ctx context.Context, userID string) error {
 	existingUser, err := s.userRepo.GetUserByID(ctx, userID)
 	if err != nil {
 		return fmt.Errorf("failed to get user: %w", err)
@@ -190,8 +189,8 @@ func (s *UserService) DeleteUser(ctx context.Context, userID string) error {
 
 // ListUsers retrieves a list of users with optional filtering
 // assignees: rafaelsousa
-func (s *UserService) ListUsers(ctx context.Context, params *ListUsersParams) ([]*domain.User, error) {
-	repoParams := &repository.ListUsersParams{
+func (s *userService) ListUsers(ctx context.Context, params *ListUsersParams) ([]*domain.User, error) {
+	repoParams := &ports.ListUsersParams{
 		Email:             params.Email,
 		CreatedStartRange: params.CreatedStartRange,
 		CreatedEndRange:   params.CreatedEndRange,
@@ -201,7 +200,7 @@ func (s *UserService) ListUsers(ctx context.Context, params *ListUsersParams) ([
 }
 
 // ConfirmUserRegistration confirms a user's email based on token
-func (s *UserService) ConfirmUserRegistration(ctx context.Context, token string) error {
+func (s *userService) ConfirmUserRegistration(ctx context.Context, token string) error {
 	userID, err := s.confirmationRepo.GetUserConfirmationByToken(ctx, token)
 	if err != nil {
 		return fmt.Errorf("failed to get user by confirmation token: %w", err)
@@ -220,17 +219,17 @@ func (s *UserService) ConfirmUserRegistration(ctx context.Context, token string)
 }
 
 // RequestPasswordReset generates a password reset token for the user
-func (s *UserService) RequestPasswordReset(ctx context.Context, email string) (string, error) {
+func (s *userService) RequestPasswordReset(ctx context.Context, email string) (string, error) {
 	return "", errors.New("not implemented")
 }
 
 // ResetPassword resets the user's password using the reset token
-func (s *UserService) ResetPassword(ctx context.Context, token string, newPassword string) error {
+func (s *userService) ResetPassword(ctx context.Context, token string, newPassword string) error {
 	return errors.New("not implemented")
 }
 
 // VerifyPassword verifies if the provided password matches the user's password
-func (s *UserService) VerifyPassword(ctx context.Context, email string, password string) (*domain.User, error) {
+func (s *userService) VerifyPassword(ctx context.Context, email string, password string) (*domain.User, error) {
 	user, err := s.userRepo.GetUserByEmail(ctx, email)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get user by email: %w", err)

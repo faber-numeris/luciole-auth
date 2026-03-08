@@ -1,25 +1,37 @@
-package handlers
+package httpapi
 
 import (
 	"context"
 	"log/slog"
 
-	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/http/api/gen"
-	"github.com/faber-numeris/luciole-auth/authn/internal/application"
+	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/httpapi/gen"
+	"github.com/faber-numeris/luciole-auth/authn/internal/app"
 	"github.com/faber-numeris/luciole-auth/authn/internal/domain"
 	"github.com/faber-numeris/luciole-auth/authn/internal/platform/mapper/generated"
 )
 
-type IAuthnService = api.Handler
-
-type AuthnService struct {
-	userService application.IUserService
+type Handler struct {
+	userService   app.UserService
+	hashingService app.HashingService
+	encryptionService app.EncryptionService
 }
 
 var converterImpl = generated.ConverterImpl{}
 
-func (a *AuthnService) ConfirmUserRegistration(ctx context.Context, params api.ConfirmUserRegistrationParams) (api.ConfirmUserRegistrationRes, error) {
-	err := a.userService.ConfirmUserRegistration(ctx, params.Token)
+func NewHandler(
+	userService app.UserService,
+	hashingService app.HashingService,
+	encryptionService app.EncryptionService,
+) *Handler {
+	return &Handler{
+		userService:   userService,
+		hashingService: hashingService,
+		encryptionService: encryptionService,
+	}
+}
+
+func (h *Handler) ConfirmUserRegistration(ctx context.Context, params api.ConfirmUserRegistrationParams) (api.ConfirmUserRegistrationRes, error) {
+	err := h.userService.ConfirmUserRegistration(ctx, params.Token)
 	if err != nil {
 		slog.Error("Failed to confirm registration", "error", err)
 		return &api.ConfirmUserRegistrationBadRequest{
@@ -34,10 +46,8 @@ func (a *AuthnService) ConfirmUserRegistration(ctx context.Context, params api.C
 	}, nil
 }
 
-// GetUserByID retrieves a user by their ID
-// assignees: rafaelsousa
-func (a *AuthnService) GetUserByID(ctx context.Context, params api.GetUserByIDParams) (api.GetUserByIDRes, error) {
-	user, err := a.userService.GetUserByID(ctx, string(params.ID))
+func (h *Handler) GetUserByID(ctx context.Context, params api.GetUserByIDParams) (api.GetUserByIDRes, error) {
+	user, err := h.userService.GetUserByID(ctx, string(params.ID))
 	if err != nil {
 		errorResponse := &api.GetUserByIDInternalServerError{
 			Error:   err.Error(),
@@ -69,7 +79,7 @@ func (a *AuthnService) GetUserByID(ctx context.Context, params api.GetUserByIDPa
 	return &apiUser, nil
 }
 
-func (a *AuthnService) GetUserProfile(ctx context.Context) (api.GetUserProfileRes, error) {
+func (h *Handler) GetUserProfile(ctx context.Context) (api.GetUserProfileRes, error) {
 	userID := ctx.Value(UserIDKey)
 	if userID == nil {
 		return &api.GetUserProfileUnauthorized{
@@ -79,7 +89,7 @@ func (a *AuthnService) GetUserProfile(ctx context.Context) (api.GetUserProfileRe
 		}, nil
 	}
 
-	user, err := a.userService.GetUserByID(ctx, userID.(string))
+	user, err := h.userService.GetUserByID(ctx, userID.(string))
 	if err != nil {
 		slog.Error("Failed to get user profile", "error", err)
 		return &api.GetUserProfileInternalServerError{
@@ -109,8 +119,8 @@ func (a *AuthnService) GetUserProfile(ctx context.Context) (api.GetUserProfileRe
 	return &apiUser, nil
 }
 
-func (a *AuthnService) LoginUser(ctx context.Context, req *api.LoginRequest) (api.LoginUserRes, error) {
-	user, err := a.userService.VerifyPassword(ctx, req.Email, req.Password)
+func (h *Handler) LoginUser(ctx context.Context, req *api.LoginRequest) (api.LoginUserRes, error) {
+	user, err := h.userService.VerifyPassword(ctx, req.Email, req.Password)
 	if err != nil {
 		slog.Error("Login failed", "email", req.Email, "error", err)
 		return &api.LoginUserUnauthorized{
@@ -137,11 +147,11 @@ func (a *AuthnService) LoginUser(ctx context.Context, req *api.LoginRequest) (ap
 	}, nil
 }
 
-func (a *AuthnService) LogoutUser(ctx context.Context) (api.LogoutUserRes, error) {
+func (h *Handler) LogoutUser(ctx context.Context) (api.LogoutUserRes, error) {
 	return &api.LogoutUserNoContent{}, nil
 }
 
-func (a *AuthnService) RegisterUser(ctx context.Context, req *api.UserCreateRequest) (api.RegisterUserRes, error) {
+func (h *Handler) RegisterUser(ctx context.Context, req *api.UserCreateRequest) (api.RegisterUserRes, error) {
 	userModel, err := converterImpl.UserModelFromUserRequest(*req)
 	if err != nil {
 		errorResponse := &api.RegisterUserBadRequest{
@@ -153,7 +163,7 @@ func (a *AuthnService) RegisterUser(ctx context.Context, req *api.UserCreateRequ
 		return errorResponse, err
 	}
 
-	userResponse, err := a.userService.RegisterUser(ctx, &userModel, req.Password)
+	userResponse, err := h.userService.RegisterUser(ctx, &userModel, req.Password)
 	if err != nil {
 		errorResponse := &api.RegisterUserInternalServerError{
 			Error:   err.Error(),
@@ -176,8 +186,8 @@ func (a *AuthnService) RegisterUser(ctx context.Context, req *api.UserCreateRequ
 	return &apiUserResponse, nil
 }
 
-func (a *AuthnService) RequestPasswordReset(ctx context.Context, req *api.PasswordResetRequest) (api.RequestPasswordResetRes, error) {
-	_, err := a.userService.RequestPasswordReset(ctx, req.Email)
+func (h *Handler) RequestPasswordReset(ctx context.Context, req *api.PasswordResetRequest) (api.RequestPasswordResetRes, error) {
+	_, err := h.userService.RequestPasswordReset(ctx, req.Email)
 	if err != nil {
 		slog.Error("Password reset request failed", "email", req.Email, "error", err)
 		return &api.RequestPasswordResetNotFound{
@@ -192,8 +202,8 @@ func (a *AuthnService) RequestPasswordReset(ctx context.Context, req *api.Passwo
 	}, nil
 }
 
-func (a *AuthnService) ResetPassword(ctx context.Context, req *api.PasswordResetConfirm) (api.ResetPasswordRes, error) {
-	err := a.userService.ResetPassword(ctx, req.Token, req.NewPassword)
+func (h *Handler) ResetPassword(ctx context.Context, req *api.PasswordResetConfirm) (api.ResetPasswordRes, error) {
+	err := h.userService.ResetPassword(ctx, req.Token, req.NewPassword)
 	if err != nil {
 		slog.Error("Password reset failed", "error", err)
 		return &api.ResetPasswordBadRequest{
@@ -208,7 +218,7 @@ func (a *AuthnService) ResetPassword(ctx context.Context, req *api.PasswordReset
 	}, nil
 }
 
-func (a *AuthnService) UpdateUserProfile(ctx context.Context, req *api.UserUpdateRequest) (api.UpdateUserProfileRes, error) {
+func (h *Handler) UpdateUserProfile(ctx context.Context, req *api.UserUpdateRequest) (api.UpdateUserProfileRes, error) {
 	userID := ctx.Value(UserIDKey)
 	if userID == nil {
 		return &api.UpdateUserProfileUnauthorized{
@@ -235,7 +245,7 @@ func (a *AuthnService) UpdateUserProfile(ctx context.Context, req *api.UserUpdat
 		userModel.Profile.Timezone = timezone
 	}
 
-	updatedUser, err := a.userService.UpdateUserProfile(ctx, userID.(string), userModel)
+	updatedUser, err := h.userService.UpdateUserProfile(ctx, userID.(string), userModel)
 	if err != nil {
 		slog.Error("Failed to update user profile", "error", err)
 		return &api.UpdateUserProfileInternalServerError{
@@ -255,10 +265,4 @@ func (a *AuthnService) UpdateUserProfile(ctx context.Context, req *api.UserUpdat
 	}
 
 	return &apiUser, nil
-}
-
-func NewAuthnService(userService application.IUserService) IAuthnService {
-	return &AuthnService{
-		userService: userService,
-	}
 }

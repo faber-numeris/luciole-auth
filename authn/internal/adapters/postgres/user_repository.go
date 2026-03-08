@@ -1,30 +1,30 @@
-package postgres
+package postgresadapter
 
 import (
 	"context"
 	"database/sql"
 	"errors"
 
-	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/persistence/postgres/sqlc"
+	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/postgres/gen"
+	"github.com/faber-numeris/luciole-auth/authn/internal/app/ports"
 	"github.com/faber-numeris/luciole-auth/authn/internal/domain"
 	"github.com/faber-numeris/luciole-auth/authn/internal/platform/mapper/generated"
-	"github.com/faber-numeris/luciole-auth/authn/internal/ports/repository"
 )
 
-type SQLCUserRepository struct {
-	querier sqlc.Querier
+type userRepository struct {
+	querier gen.Querier
 }
 
 var conversion = generated.ConverterImpl{}
 
-func NewSQLCUserRepository(querier sqlc.Querier) *SQLCUserRepository {
-	return &SQLCUserRepository{
+func NewUserRepository(querier gen.Querier) ports.UserRepository {
+	return &userRepository{
 		querier: querier,
 	}
 }
 
-func (r *SQLCUserRepository) CreateUser(ctx context.Context, user *domain.User, passwordHash string) (*domain.User, error) {
-	createParams := sqlc.CreateUserParams{
+func (r *userRepository) CreateUser(ctx context.Context, user *domain.User, passwordHash string) (*domain.User, error) {
+	createParams := gen.CreateUserParams{
 		Email:        user.Email,
 		PasswordHash: []byte(passwordHash),
 	}
@@ -41,7 +41,7 @@ func (r *SQLCUserRepository) CreateUser(ctx context.Context, user *domain.User, 
 	return &result, nil
 }
 
-func (r *SQLCUserRepository) GetUserByID(ctx context.Context, id string) (*domain.User, error) {
+func (r *userRepository) GetUserByID(ctx context.Context, id string) (*domain.User, error) {
 	sqlcUser, err := r.querier.GetUser(ctx, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -57,7 +57,7 @@ func (r *SQLCUserRepository) GetUserByID(ctx context.Context, id string) (*domai
 	return &result, nil
 }
 
-func (r *SQLCUserRepository) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
+func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
 	sqlcUser, err := r.querier.GetUserByEmail(ctx, email)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -73,7 +73,7 @@ func (r *SQLCUserRepository) GetUserByEmail(ctx context.Context, email string) (
 	return &result, nil
 }
 
-func (r *SQLCUserRepository) UpdateUser(ctx context.Context, user *domain.User) error {
+func (r *userRepository) UpdateUser(ctx context.Context, user *domain.User) error {
 	var firstName, lastName, locale, timezone string
 	if user.Profile != nil {
 		firstName = user.Profile.FirstName
@@ -82,7 +82,7 @@ func (r *SQLCUserRepository) UpdateUser(ctx context.Context, user *domain.User) 
 		timezone = user.Profile.Timezone
 	}
 
-	updateParams := sqlc.UpdateUserParams{
+	updateParams := gen.UpdateUserParams{
 		ID:           user.ID,
 		Email:        user.Email,
 		PasswordHash: []byte{},
@@ -96,12 +96,12 @@ func (r *SQLCUserRepository) UpdateUser(ctx context.Context, user *domain.User) 
 	return err
 }
 
-func (r *SQLCUserRepository) DeleteUser(ctx context.Context, id string) error {
+func (r *userRepository) DeleteUser(ctx context.Context, id string) error {
 	return r.querier.DeleteUser(ctx, id)
 }
 
-func (r *SQLCUserRepository) ListUsers(ctx context.Context, params *repository.ListUsersParams) ([]*domain.User, error) {
-	sqlcParams := sqlc.ListUsersParams{
+func (r *userRepository) ListUsers(ctx context.Context, params *ports.ListUsersParams) ([]*domain.User, error) {
+	sqlcParams := gen.ListUsersParams{
 		Active:            params.Active,
 		Email:             params.Email,
 		CreatedStartRange: params.CreatedStartRange,
@@ -125,8 +125,8 @@ func (r *SQLCUserRepository) ListUsers(ctx context.Context, params *repository.L
 	return result, nil
 }
 
-func (r *SQLCUserRepository) UpdatePassword(ctx context.Context, userID string, passwordHash []byte) error {
-	return r.querier.UpdatePassword(ctx, sqlc.UpdatePasswordParams{
+func (r *userRepository) UpdatePassword(ctx context.Context, userID string, passwordHash []byte) error {
+	return r.querier.UpdatePassword(ctx, gen.UpdatePasswordParams{
 		Userid:       userID,
 		Passwordhash: passwordHash,
 	})

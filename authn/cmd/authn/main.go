@@ -5,8 +5,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/faber-numeris/luciole-auth/authn/internal/bootstrap"
-	"github.com/faber-numeris/luciole-auth/authn/internal/platform/util"
 	"github.com/lmittmann/tint"
 )
 
@@ -18,10 +16,7 @@ func main() {
 		}),
 	))
 
-	conf := bootstrap.ProvideConfiguration()
-	router := util.Must(bootstrap.ProvideRouter())
-
-	app := NewApp(conf, router)
+	app := NewApp()
 	if err := app.Run(); err != nil {
 		slog.Error("Application error", "error", err)
 	}

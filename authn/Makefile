@@ -1,49 +1,27 @@
-# Path to goose binary (if not already on PATH)
+# Path to goose binary
 GOOSE=$(shell which goose)
 
 # Database connection string
-DB_CONNECTION=postgres://postgres:postgres@localhost/postgres?sslmode=disable
+DATABASE_URL?=postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
 
 # Migration directory
-MIGRATION_DIR=migration
+MIGRATION_DIR=internal/adapters/postgres/migrations
 
-# Ensure required args are provided
-require-name:
-	@if [ -z "$(name)" ]; then \
-		echo "❌ Missing migration name. Usage:"; \
-		echo "   make create-migration name=init_users"; \
-		exit 1; \
-	fi
+generate-oas:
+	go run github.com/ogen-go/ogen/cmd/ogen@latest \
+		--target internal/adapters/httpapi/gen \
+		--clean internal/adapters/httpapi/openapi.yaml
 
-# Create a new migration file
-create-migration: require-name
-	$(GOOSE) -dir $(MIGRATION_DIR) create $(name) sql
-
-# Run migrations by one step (up)
-migrate-one-up:
-	$(GOOSE) -dir $(MIGRATION_DIR) postgres "$(DB_CONNECTION)" up 1
-
-# Run all migrations up to the latest
-migrate-all-up:
-	$(GOOSE) -dir $(MIGRATION_DIR) postgres "$(DB_CONNECTION)" up
-
-# Revert one migration step (down)
-migrate-one-down:
-	$(GOOSE) -dir $(MIGRATION_DIR) postgres "$(DB_CONNECTION)" down 1
-
-# Revert all migrations to the initial state
-migrate-all-down:
-	$(GOOSE) -dir $(MIGRATION_DIR) postgres "$(DB_CONNECTION)" down
-
-sqlc:
-	rm -rf internal/adapters/persistence/postgres/sqlc/*.go
+generate-sqlc:
 	go run github.com/sqlc-dev/sqlc/cmd/sqlc@latest generate
 
-goverter:
+generate-mappers:
 	go run github.com/jmattheis/goverter/cmd/goverter@latest gen github.com/faber-numeris/luciole-auth/authn/internal/platform/mapper
 
-openapi:
-	@echo "Generating files..."
-	go run github.com/ogen-go/ogen/cmd/ogen@latest --target internal/adapters/http/api/gen --clean internal/adapters/http/api/openapi.yaml
+migrate-all-up:
+	$(GOOSE) -dir $(MIGRATION_DIR) postgres "$(DATABASE_URL)" up
 
-.PHONY: create-migration migrate-one-up migrate-all-up migrate-one-down migrate-all-down clean-migrations sqlc generate-goverter
+migrate-all-down:
+	$(GOOSE) -dir $(MIGRATION_DIR) postgres "$(DATABASE_URL)" down
+
+.PHONY: generate-oas generate-sqlc generate-mappers migrate-all-up migrate-all-down

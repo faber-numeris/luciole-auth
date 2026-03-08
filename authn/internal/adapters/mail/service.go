@@ -1,8 +1,11 @@
 package mail
 
 import (
-	"github.com/faber-numeris/luciole-auth/authn/internal/ports/messaging"
+	"github.com/faber-numeris/luciole-auth/authn/internal/app/ports"
+	"github.com/faber-numeris/luciole-auth/authn/internal/infrastructure/config"
 )
 
-// Verify at compile time that Mailpit implements IMailService
-var _ messaging.IMailService = (*Mailpit)(nil)
+// NewService creates a new mailer service
+func NewService(cfg config.IMailConfig) ports.Mailer {
+	return NewMailpit(cfg)
+}

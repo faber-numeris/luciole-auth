@@ -3,7 +3,7 @@
 //   sqlc v1.30.0
 // source: user_confirmations.sql
 
-package sqlc
+package gen
 
 import (
 	"context"
