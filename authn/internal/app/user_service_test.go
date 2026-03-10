@@ -6,7 +6,8 @@ import (
 	"testing"
 
 	"github.com/faber-numeris/luciole-auth/authn/internal/app"
-	"github.com/faber-numeris/luciole-auth/authn/internal/app/ports"
+	inboundport "github.com/faber-numeris/luciole-auth/authn/internal/app/ports/inbound"
+	outboundport "github.com/faber-numeris/luciole-auth/authn/internal/app/ports/outbound"
 	"github.com/faber-numeris/luciole-auth/authn/internal/domain"
 	"github.com/faber-numeris/luciole-auth/authn/internal/mocks"
 	"github.com/stretchr/testify/assert"
@@ -67,7 +68,7 @@ func TestUserService_RegisterUser(t *testing.T) {
 		createdUser, err := service.RegisterUser(ctx, user, password)
 
 		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "failed to create user")
+		assert.Contains(t, err.Error(), "failed to create user in repository")
 		assert.Nil(t, createdUser)
 	})
 
@@ -374,9 +375,9 @@ func TestUserService_ListUsers(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		userRepo := mocks.NewMockUserRepository(t)
 		service := app.NewUserService(userRepo, nil, nil, nil)
-		params := &app.ListUsersParams{Active: true}
+		params := &inboundport.ListUsersParams{Active: true}
 		expectedUsers := []*domain.User{{ID: "1"}, {ID: "2"}}
-		userRepo.EXPECT().ListUsers(ctx, mock.MatchedBy(func(p *ports.ListUsersParams) bool {
+		userRepo.EXPECT().ListUsers(ctx, mock.MatchedBy(func(p *outboundport.ListUsersParams) bool {
 			return p.Active == true
 		})).Return(expectedUsers, nil)
 
@@ -391,7 +392,7 @@ func TestUserService_ListUsers(t *testing.T) {
 		service := app.NewUserService(userRepo, nil, nil, nil)
 		userRepo.EXPECT().ListUsers(ctx, mock.Anything).Return(nil, errors.New("db error"))
 
-		users, err := service.ListUsers(ctx, &app.ListUsersParams{})
+		users, err := service.ListUsers(ctx, &inboundport.ListUsersParams{})
 
 		assert.Error(t, err)
 		assert.Nil(t, users)

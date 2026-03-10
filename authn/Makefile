@@ -1,16 +1,16 @@
 # Path to goose binary
-GOOSE=$(shell which goose)
+GOOSE=go run github.com/pressly/goose/v3/cmd/goose@v3.27.0
 
 # Database connection string
 DATABASE_URL?=postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable
 
 # Migration directory
-MIGRATION_DIR=internal/adapters/postgres/migrations
+MIGRATION_DIR=internal/adapters/outbound/postgres/migrations
 
 generate-oas:
 	go run github.com/ogen-go/ogen/cmd/ogen@latest \
-		--target internal/adapters/httpapi/gen \
-		--clean internal/adapters/httpapi/openapi.yaml
+		--target internal/adapters/inbound/httpapi/gen \
+		--clean internal/adapters/inbound/httpapi/openapi.yaml
 
 generate-sqlc:
 	go run github.com/sqlc-dev/sqlc/cmd/sqlc@latest generate

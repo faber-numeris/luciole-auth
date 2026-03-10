@@ -11,11 +11,11 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/httpapi"
-	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/httpapi/gen"
-	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/mail"
-	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/postgres"
-	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/postgres/gen"
+	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/inbound/httpapi"
+	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/inbound/httpapi/gen"
+	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/outbound/mail"
+	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/outbound/postgres"
+	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/outbound/postgres/gen"
 	"github.com/faber-numeris/luciole-auth/authn/internal/app"
 	"github.com/faber-numeris/luciole-auth/authn/internal/infrastructure/config"
 	infra_postgres "github.com/faber-numeris/luciole-auth/authn/internal/infrastructure/postgres"
@@ -73,7 +73,7 @@ func buildRouter(cfg config.IAppConfig, srv *api.Server) http.Handler {
 		specui.WithTitle("Luciole Auth API"),
 		specui.WithDocsPath("/docs/authn"),
 		specui.WithSpecPath("/docs/authn/openapi.yaml"),
-		specui.WithSpecFile("authn/internal/adapters/httpapi/openapi.yaml"),
+		specui.WithSpecFile("authn/internal/adapters/inbound/httpapi/openapi.yaml"),
 		specui.WithStoplightElements(),
 	)
 

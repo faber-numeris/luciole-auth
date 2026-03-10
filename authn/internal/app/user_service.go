@@ -9,66 +9,28 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/faber-numeris/luciole-auth/authn/internal/app/ports"
+	inboundport "github.com/faber-numeris/luciole-auth/authn/internal/app/ports/inbound"
+	outboundport "github.com/faber-numeris/luciole-auth/authn/internal/app/ports/outbound"
 	"github.com/faber-numeris/luciole-auth/authn/internal/domain"
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
-// UserService defines the interface for user business logic operations
-type UserService interface {
-	// RegisterUser creates a new user account
-	RegisterUser(ctx context.Context, user *domain.User, password string) (*domain.User, error)
-
-	// GetUserByID retrieves a user by their ID
-	GetUserByID(ctx context.Context, id string) (*domain.User, error)
-
-	// GetUserByEmail retrieves a user by their email
-	GetUserByEmail(ctx context.Context, email string) (*domain.User, error)
-
-	// UpdateUserProfile updates an existing user's profile
-	UpdateUserProfile(ctx context.Context, userID string, req *domain.User) (*domain.User, error)
-
-	// DeleteUser deactivates a user account
-	DeleteUser(ctx context.Context, userID string) error
-
-	// ListUsers retrieves a list of users with optional filtering
-	ListUsers(ctx context.Context, params *ListUsersParams) ([]*domain.User, error)
-
-	// ConfirmUserRegistration confirms a user's email based on token
-	ConfirmUserRegistration(ctx context.Context, token string) error
-
-	// RequestPasswordReset generates a password reset token for the user
-	RequestPasswordReset(ctx context.Context, email string) (string, error)
-
-	// ResetPassword resets the user's password using the reset token
-	ResetPassword(ctx context.Context, token string, newPassword string) error
-
-	// VerifyPassword verifies if the provided password matches the user's password
-	VerifyPassword(ctx context.Context, email string, password string) (*domain.User, error)
-}
-
-// ListUsersParams contains parameters for listing users at the service level
-type ListUsersParams struct {
-	Email             *string
-	CreatedStartRange *time.Time
-	CreatedEndRange   *time.Time
-	Active            bool
-}
-
-// userService implements the UserService interface
+// userService implements the inboundport.UserService interface
 type userService struct {
-	userRepo         ports.UserRepository
-	confirmationRepo ports.UserConfirmationRepository
-	mailService      ports.Mailer
-	hashingService   HashingService
+	userRepo         outboundport.UserRepository
+	confirmationRepo outboundport.UserConfirmationRepository
+	mailService      outboundport.Mailer
+	hashingService   inboundport.HashingService
 }
 
-// NewUserService creates a new instance of UserService
+// NewUserService creates a new instance of inboundport.UserService
 func NewUserService(
-	userRepo ports.UserRepository,
-	confirmationRepo ports.UserConfirmationRepository,
-	hashingService HashingService,
-	mailService ports.Mailer,
-) UserService {
+	userRepo outboundport.UserRepository,
+	confirmationRepo outboundport.UserConfirmationRepository,
+	hashingService inboundport.HashingService,
+	mailService outboundport.Mailer,
+) inboundport.UserService {
 	return &userService{
 		userRepo:         userRepo,
 		confirmationRepo: confirmationRepo,
@@ -88,9 +50,13 @@ func (s *userService) RegisterUser(ctx context.Context, user *domain.User, passw
 	slog.Debug("Password hashed successfully")
 
 	createdUser, err := s.userRepo.CreateUser(ctx, user, passwordHash)
+	var pgErr *pgconn.PgError
 	if err != nil {
 		slog.Error("Failed to create user in repository", "error", err)
-		return nil, fmt.Errorf("failed to create user: %w", err)
+		if errors.As(err, &pgErr) && pgerrcode.IsIntegrityConstraintViolation(pgErr.Code) {
+			return nil, domain.ErrUserAlreadyExists
+		}
+		return nil, fmt.Errorf("failed to create user in repository: %w", err)
 	}
 	slog.Info("User created successfully in repository", "userID", createdUser.ID)
 
@@ -218,9 +184,9 @@ func (s *userService) DeleteUser(ctx context.Context, userID string) error {
 }
 
 // ListUsers retrieves a list of users with optional filtering
-func (s *userService) ListUsers(ctx context.Context, params *ListUsersParams) ([]*domain.User, error) {
+func (s *userService) ListUsers(ctx context.Context, params *inboundport.ListUsersParams) ([]*domain.User, error) {
 	slog.Info("Listing users", "params", params)
-	repoParams := &ports.ListUsersParams{
+	repoParams := &outboundport.ListUsersParams{
 		Email:             params.Email,
 		CreatedStartRange: params.CreatedStartRange,
 		CreatedEndRange:   params.CreatedEndRange,

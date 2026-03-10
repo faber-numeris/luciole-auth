@@ -1,59 +1,13 @@
 version: "2"
 sql:
-  - engine: "postgresql"
-    queries: "internal/adapters/postgres/queries"
-    schema: "internal/adapters/postgres/migrations"
-    database:
-      uri: "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable"
+  - schema: "internal/adapters/outbound/postgres/migrations"
+    queries: "internal/adapters/outbound/postgres/queries"
+    engine: "postgresql"
     gen:
       go:
         package: "gen"
-        out: "internal/adapters/postgres/gen"
-        sql_package: "pgx/v5"
-        emit_pointers_for_null_types: true
+        out: "internal/adapters/outbound/postgres/gen"
         emit_interface: true
-        overrides:
-          - db_type: "pg_catalog.numeric"
-            go_type: "github.com/shopspring/decimal.Decimal"
-          - db_type: "pg_catalog.numeric"
-            go_type: "github.com/shopspring/decimal.Decimal"
-            nullable: true
-          - db_type: "pg_catalog.varchar"
-            go_type:
-              type: "string"
-              pointer: true
-            nullable: true
-          - db_type: "text"
-            go_type:
-              type: "string"
-              pointer: true
-            nullable: true
-          - db_type: "pg_catalog.timestamp"
-            go_type:
-              import: "time"
-              type: "Time"
-          - db_type: "pg_catalog.timestamp"
-            nullable: true
-            go_type:
-              import: "time"
-              type: "Time"
-              pointer: true
-          - db_type: "pg_catalog.int4"
-            nullable: true
-            go_type:
-              type: "int"
-              pointer: true
-          - db_type: "pg_catalog.int4"
-            go_type:
-              type: "int"
-          - db_type: "serial"
-            go_type:
-              type: "int"
-          - db_type: "integer"
-            go_type:
-              type: "int"
-          - db_type: "integer"
-            go_type:
-              type: "int"
-              pointer: true
-            nullable: true
+        emit_json_tags: true
+        emit_prepared_queries: true
+        emit_exact_table_names: false

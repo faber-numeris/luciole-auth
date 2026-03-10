@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/httpapi/gen"
+	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/inbound/httpapi/gen"
 	"github.com/faber-numeris/luciole-auth/authn/internal/infrastructure/config"
 	infra_postgres "github.com/faber-numeris/luciole-auth/authn/internal/infrastructure/postgres"
 	"github.com/faber-numeris/luciole-auth/authn/internal/mocks"

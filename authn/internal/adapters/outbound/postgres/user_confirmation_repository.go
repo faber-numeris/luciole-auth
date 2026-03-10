@@ -6,8 +6,8 @@ import (
 	"errors"
 	"time"
 
-	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/postgres/gen"
-	"github.com/faber-numeris/luciole-auth/authn/internal/app/ports"
+	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/outbound/postgres/gen"
+	outboundport "github.com/faber-numeris/luciole-auth/authn/internal/app/ports/outbound"
 	"github.com/faber-numeris/luciole-auth/authn/internal/domain"
 	"github.com/faber-numeris/luciole-auth/authn/internal/platform/mapper/generated"
 )
@@ -18,7 +18,7 @@ type userConfirmationRepository struct {
 	querier gen.Querier
 }
 
-func NewUserConfirmationRepository(querier gen.Querier) ports.UserConfirmationRepository {
+func NewUserConfirmationRepository(querier gen.Querier) outboundport.UserConfirmationRepository {
 	return &userConfirmationRepository{
 		querier: querier,
 	}

@@ -5,10 +5,12 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/postgres/gen"
-	"github.com/faber-numeris/luciole-auth/authn/internal/app/ports"
+	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/outbound/postgres/gen"
+	outboundport "github.com/faber-numeris/luciole-auth/authn/internal/app/ports/outbound"
 	"github.com/faber-numeris/luciole-auth/authn/internal/domain"
 	"github.com/faber-numeris/luciole-auth/authn/internal/platform/mapper/generated"
+	"github.com/jackc/pgerrcode"
+	"github.com/jackc/pgx/v5/pgconn"
 )
 
 type userRepository struct {
@@ -17,7 +19,7 @@ type userRepository struct {
 
 var conversion = generated.ConverterImpl{}
 
-func NewUserRepository(querier gen.Querier) ports.UserRepository {
+func NewUserRepository(querier gen.Querier) outboundport.UserRepository {
 	return &userRepository{
 		querier: querier,
 	}
@@ -31,6 +33,10 @@ func (r *userRepository) CreateUser(ctx context.Context, user *domain.User, pass
 
 	sqlcUser, err := r.querier.CreateUser(ctx, createParams)
 	if err != nil {
+		var pgerr *pgconn.PgError
+		if errors.As(err, &pgerr) && pgerrcode.IsIntegrityConstraintViolation(pgerr.Code) {
+			return nil, domain.ErrUserAlreadyExists
+		}
 		return nil, err
 	}
 
@@ -100,7 +106,7 @@ func (r *userRepository) DeleteUser(ctx context.Context, id string) error {
 	return r.querier.DeleteUser(ctx, id)
 }
 
-func (r *userRepository) ListUsers(ctx context.Context, params *ports.ListUsersParams) ([]*domain.User, error) {
+func (r *userRepository) ListUsers(ctx context.Context, params *outboundport.ListUsersParams) ([]*domain.User, error) {
 	sqlcParams := gen.ListUsersParams{
 		Active:            params.Active,
 		Email:             params.Email,

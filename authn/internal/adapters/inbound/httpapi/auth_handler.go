@@ -2,30 +2,31 @@ package httpapi
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 
-	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/httpapi/gen"
-	"github.com/faber-numeris/luciole-auth/authn/internal/app"
+	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/inbound/httpapi/gen"
+	inboundport "github.com/faber-numeris/luciole-auth/authn/internal/app/ports/inbound"
 	"github.com/faber-numeris/luciole-auth/authn/internal/domain"
 	"github.com/faber-numeris/luciole-auth/authn/internal/platform/mapper/generated"
 )
 
 type Handler struct {
-	userService   app.UserService
-	hashingService app.HashingService
-	encryptionService app.EncryptionService
+	userService       inboundport.UserService
+	hashingService    inboundport.HashingService
+	encryptionService inboundport.EncryptionService
 }
 
 var converterImpl = generated.ConverterImpl{}
 
 func NewHandler(
-	userService app.UserService,
-	hashingService app.HashingService,
-	encryptionService app.EncryptionService,
+	userService inboundport.UserService,
+	hashingService inboundport.HashingService,
+	encryptionService inboundport.EncryptionService,
 ) *Handler {
 	return &Handler{
-		userService:   userService,
-		hashingService: hashingService,
+		userService:       userService,
+		hashingService:    hashingService,
 		encryptionService: encryptionService,
 	}
 }
@@ -54,7 +55,7 @@ func (h *Handler) GetUserByID(ctx context.Context, params api.GetUserByIDParams)
 			Message: "Could not retrieve user. Please try again later.",
 			Details: api.OptErrorDetails{},
 		}
-		return errorResponse, err
+		return errorResponse, nil
 	}
 
 	if user == nil {
@@ -73,7 +74,7 @@ func (h *Handler) GetUserByID(ctx context.Context, params api.GetUserByIDParams)
 			Message: "Could not process user response.",
 			Details: api.OptErrorDetails{},
 		}
-		return errorResponse, err
+		return errorResponse, nil
 	}
 
 	return &apiUser, nil
@@ -160,17 +161,24 @@ func (h *Handler) RegisterUser(ctx context.Context, req *api.UserCreateRequest) 
 			Details: api.OptErrorDetails{},
 		}
 
-		return errorResponse, err
+		return errorResponse, nil
 	}
 
 	userResponse, err := h.userService.RegisterUser(ctx, &userModel, req.Password)
 	if err != nil {
+		if errors.Is(err, domain.ErrUserAlreadyExists) {
+			return &api.RegisterUserConflict{
+				Error:   "USER_ALREADY_EXISTS",
+				Message: "User already exists",
+				Details: api.OptErrorDetails{},
+			}, nil
+		}
 		errorResponse := &api.RegisterUserInternalServerError{
 			Error:   err.Error(),
 			Message: "Could not register user. Please try again later.",
 			Details: api.OptErrorDetails{},
 		}
-		return errorResponse, err
+		return errorResponse, nil
 	}
 
 	apiUserResponse, err := converterImpl.UserModelToApiUser(*userResponse)
@@ -180,7 +188,7 @@ func (h *Handler) RegisterUser(ctx context.Context, req *api.UserCreateRequest) 
 			Message: "Could not process user response.",
 			Details: api.OptErrorDetails{},
 		}
-		return errorResponse, err
+		return errorResponse, nil
 	}
 
 	return &apiUserResponse, nil

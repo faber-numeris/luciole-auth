@@ -3,19 +3,15 @@ package app
 import (
 	"context"
 
+	inboundport "github.com/faber-numeris/luciole-auth/authn/internal/app/ports/inbound"
 	"github.com/faber-numeris/luciole-auth/authn/internal/infrastructure/config"
 )
-
-type EncryptionService interface {
-	Encrypt(ctx context.Context, textToEncrypt string) (string, error)
-	Decrypt(ctx context.Context, encryptedText string) (string, error)
-}
 
 type encryptionService struct {
 	cfg config.IServiceConfig
 }
 
-func NewEncryptionService(cfg config.IServiceConfig) EncryptionService {
+func NewEncryptionService(cfg config.IServiceConfig) inboundport.EncryptionService {
 	return &encryptionService{cfg: cfg}
 }
 

@@ -3,16 +3,13 @@ package app
 import (
 	"context"
 
+	inboundport "github.com/faber-numeris/luciole-auth/authn/internal/app/ports/inbound"
 	"golang.org/x/crypto/bcrypt"
 )
 
-type HashingService interface {
-	HashPassword(ctx context.Context, password string) (string, error)
-}
-
 type hashingService struct{}
 
-func NewHashingService() HashingService {
+func NewHashingService() inboundport.HashingService {
 	return &hashingService{}
 }
 

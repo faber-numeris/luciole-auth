@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/postgres/gen"
+	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/outbound/postgres/gen"
 	"github.com/faber-numeris/luciole-auth/authn/internal/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
