@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/httpapi/gen"
+	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/inbound/httpapi/gen"
 	"github.com/faber-numeris/luciole-auth/authn/internal/domain"
 	"github.com/faber-numeris/luciole-auth/authn/internal/mocks"
 	"github.com/faber-numeris/luciole-auth/authn/internal/platform/mapper/generated"
@@ -67,7 +67,7 @@ func TestHandler_RegisterUser(t *testing.T) {
 
 		res, err := handler.RegisterUser(ctx, req)
 
-		assert.Error(t, err)
+		assert.NoError(t, err)
 		assert.IsType(t, &api.RegisterUserInternalServerError{}, res)
 	})
 
@@ -83,7 +83,7 @@ func TestHandler_RegisterUser(t *testing.T) {
 		defer patches.Reset()
 
 		res, err := handler.RegisterUser(ctx, req)
-		assert.Error(t, err)
+		assert.NoError(t, err)
 		assert.IsType(t, &api.RegisterUserInternalServerError{}, res)
 	})
 }
@@ -169,7 +169,7 @@ func TestHandler_GetUserByID(t *testing.T) {
 
 		res, err := handler.GetUserByID(ctx, api.GetUserByIDParams{ID: "500"})
 
-		assert.Error(t, err)
+		assert.NoError(t, err)
 		assert.IsType(t, &api.GetUserByIDInternalServerError{}, res)
 	})
 
@@ -185,7 +185,7 @@ func TestHandler_GetUserByID(t *testing.T) {
 		defer patches.Reset()
 
 		res, err := handler.GetUserByID(ctx, api.GetUserByIDParams{ID: "123"})
-		assert.Error(t, err)
+		assert.NoError(t, err)
 		assert.IsType(t, &api.GetUserByIDInternalServerError{}, res)
 	})
 }

@@ -71,7 +71,7 @@ make generate-mappers
 
 ### Database Migrations
 
-Migrations are located in `authn/internal/adapters/postgres/migrations`.
+Migrations are located in `authn/internal/adapters/outbound/postgres/migrations`.
 
 ```bash
 # Run all migrations up

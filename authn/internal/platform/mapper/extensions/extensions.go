@@ -3,8 +3,8 @@ package extensions
 import (
 	"time"
 
-	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/httpapi/gen"
-	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/postgres/gen"
+	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/inbound/httpapi/gen"
+	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/outbound/postgres/gen"
 	"github.com/faber-numeris/luciole-auth/authn/internal/domain"
 )
 

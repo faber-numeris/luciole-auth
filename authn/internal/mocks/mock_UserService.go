@@ -5,8 +5,7 @@ package mocks
 import (
 	context "context"
 
-	app "github.com/faber-numeris/luciole-auth/authn/internal/app"
-
+	inboundport "github.com/faber-numeris/luciole-auth/authn/internal/app/ports/inbound"
 	domain "github.com/faber-numeris/luciole-auth/authn/internal/domain"
 
 	mock "github.com/stretchr/testify/mock"
@@ -238,7 +237,7 @@ func (_c *MockUserService_GetUserByID_Call) RunAndReturn(run func(context.Contex
 }
 
 // ListUsers provides a mock function with given fields: ctx, params
-func (_m *MockUserService) ListUsers(ctx context.Context, params *app.ListUsersParams) ([]*domain.User, error) {
+func (_m *MockUserService) ListUsers(ctx context.Context, params *inboundport.ListUsersParams) ([]*domain.User, error) {
 	ret := _m.Called(ctx, params)
 
 	if len(ret) == 0 {
@@ -247,10 +246,10 @@ func (_m *MockUserService) ListUsers(ctx context.Context, params *app.ListUsersP
 
 	var r0 []*domain.User
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *app.ListUsersParams) ([]*domain.User, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *inboundport.ListUsersParams) ([]*domain.User, error)); ok {
 		return rf(ctx, params)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *app.ListUsersParams) []*domain.User); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *inboundport.ListUsersParams) []*domain.User); ok {
 		r0 = rf(ctx, params)
 	} else {
 		if ret.Get(0) != nil {
@@ -258,7 +257,7 @@ func (_m *MockUserService) ListUsers(ctx context.Context, params *app.ListUsersP
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *app.ListUsersParams) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *inboundport.ListUsersParams) error); ok {
 		r1 = rf(ctx, params)
 	} else {
 		r1 = ret.Error(1)
@@ -274,14 +273,14 @@ type MockUserService_ListUsers_Call struct {
 
 // ListUsers is a helper method to define mock.On call
 //   - ctx context.Context
-//   - params *app.ListUsersParams
+//   - params *inboundport.ListUsersParams
 func (_e *MockUserService_Expecter) ListUsers(ctx interface{}, params interface{}) *MockUserService_ListUsers_Call {
 	return &MockUserService_ListUsers_Call{Call: _e.mock.On("ListUsers", ctx, params)}
 }
 
-func (_c *MockUserService_ListUsers_Call) Run(run func(ctx context.Context, params *app.ListUsersParams)) *MockUserService_ListUsers_Call {
+func (_c *MockUserService_ListUsers_Call) Run(run func(ctx context.Context, params *inboundport.ListUsersParams)) *MockUserService_ListUsers_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*app.ListUsersParams))
+		run(args[0].(context.Context), args[1].(*inboundport.ListUsersParams))
 	})
 	return _c
 }
@@ -291,7 +290,7 @@ func (_c *MockUserService_ListUsers_Call) Return(_a0 []*domain.User, _a1 error) 
 	return _c
 }
 
-func (_c *MockUserService_ListUsers_Call) RunAndReturn(run func(context.Context, *app.ListUsersParams) ([]*domain.User, error)) *MockUserService_ListUsers_Call {
+func (_c *MockUserService_ListUsers_Call) RunAndReturn(run func(context.Context, *inboundport.ListUsersParams) ([]*domain.User, error)) *MockUserService_ListUsers_Call {
 	_c.Call.Return(run)
 	return _c
 }

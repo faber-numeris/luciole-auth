@@ -4,8 +4,8 @@
 package generated
 
 import (
-	gen1 "github.com/faber-numeris/luciole-auth/authn/internal/adapters/httpapi/gen"
-	gen "github.com/faber-numeris/luciole-auth/authn/internal/adapters/postgres/gen"
+	gen1 "github.com/faber-numeris/luciole-auth/authn/internal/adapters/inbound/httpapi/gen"
+	gen "github.com/faber-numeris/luciole-auth/authn/internal/adapters/outbound/postgres/gen"
 	domain "github.com/faber-numeris/luciole-auth/authn/internal/domain"
 	extensions "github.com/faber-numeris/luciole-auth/authn/internal/platform/mapper/extensions"
 	"time"

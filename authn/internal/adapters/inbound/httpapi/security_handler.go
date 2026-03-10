@@ -5,7 +5,7 @@ import (
 	"errors"
 	"log/slog"
 
-	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/httpapi/gen"
+	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/inbound/httpapi/gen"
 )
 
 type SecurityHandler struct {

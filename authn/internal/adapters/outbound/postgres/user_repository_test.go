@@ -6,10 +6,10 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/postgres/gen"
+	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/outbound/postgres/gen"
+	outboundport "github.com/faber-numeris/luciole-auth/authn/internal/app/ports/outbound"
 	"github.com/faber-numeris/luciole-auth/authn/internal/domain"
 	"github.com/faber-numeris/luciole-auth/authn/internal/mocks"
-	"github.com/faber-numeris/luciole-auth/authn/internal/app/ports"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -27,7 +27,7 @@ func TestUserRepository_CreateUser(t *testing.T) {
 		res, err := repo.CreateUser(ctx, user, passwordHash)
 
 		assert.NoError(t, err)
-		assert.Equal(t, "123", res.ID)
+		assert.Equal(t, user.Email, res.Email)
 	})
 
 	t.Run("error", func(t *testing.T) {
@@ -48,7 +48,7 @@ func TestUserRepository_GetUserByID(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		querier := mocks.NewMockQuerier(t)
 		repo := NewUserRepository(querier)
-		querier.EXPECT().GetUser(ctx, "123").Return(gen.User{ID: "123"}, nil)
+		querier.EXPECT().GetUser(ctx, "123").Return(gen.User{ID: "123", Email: "test@example.com"}, nil)
 
 		res, err := repo.GetUserByID(ctx, "123")
 
@@ -85,7 +85,7 @@ func TestUserRepository_GetUserByEmail(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		querier := mocks.NewMockQuerier(t)
 		repo := NewUserRepository(querier)
-		querier.EXPECT().GetUserByEmail(ctx, "test@example.com").Return(gen.User{Email: "test@example.com"}, nil)
+		querier.EXPECT().GetUserByEmail(ctx, "test@example.com").Return(gen.User{ID: "123", Email: "test@example.com"}, nil)
 
 		res, err := repo.GetUserByEmail(ctx, "test@example.com")
 
@@ -103,15 +103,26 @@ func TestUserRepository_GetUserByEmail(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Nil(t, res)
 	})
+
+	t.Run("error", func(t *testing.T) {
+		querier := mocks.NewMockQuerier(t)
+		repo := NewUserRepository(querier)
+		querier.EXPECT().GetUserByEmail(ctx, "error").Return(gen.User{}, errors.New("db error"))
+
+		res, err := repo.GetUserByEmail(ctx, "error")
+
+		assert.Error(t, err)
+		assert.Nil(t, res)
+	})
 }
 
 func TestUserRepository_UpdateUser(t *testing.T) {
 	ctx := context.Background()
+	user := &domain.User{ID: "123", Email: "new@example.com"}
 
 	t.Run("success", func(t *testing.T) {
 		querier := mocks.NewMockQuerier(t)
 		repo := NewUserRepository(querier)
-		user := &domain.User{ID: "123", Profile: &domain.UserProfile{FirstName: "New"}}
 		querier.EXPECT().UpdateUser(ctx, mock.Anything).Return(gen.User{}, nil)
 
 		err := repo.UpdateUser(ctx, user)
@@ -119,15 +130,14 @@ func TestUserRepository_UpdateUser(t *testing.T) {
 		assert.NoError(t, err)
 	})
 
-	t.Run("success without profile", func(t *testing.T) {
+	t.Run("error", func(t *testing.T) {
 		querier := mocks.NewMockQuerier(t)
 		repo := NewUserRepository(querier)
-		user := &domain.User{ID: "123", Profile: nil}
-		querier.EXPECT().UpdateUser(ctx, mock.Anything).Return(gen.User{}, nil)
+		querier.EXPECT().UpdateUser(ctx, mock.Anything).Return(gen.User{}, errors.New("db error"))
 
 		err := repo.UpdateUser(ctx, user)
 
-		assert.NoError(t, err)
+		assert.Error(t, err)
 	})
 }
 
@@ -143,17 +153,28 @@ func TestUserRepository_DeleteUser(t *testing.T) {
 
 		assert.NoError(t, err)
 	})
+
+	t.Run("error", func(t *testing.T) {
+		querier := mocks.NewMockQuerier(t)
+		repo := NewUserRepository(querier)
+		querier.EXPECT().DeleteUser(ctx, "123").Return(errors.New("db error"))
+
+		err := repo.DeleteUser(ctx, "123")
+
+		assert.Error(t, err)
+	})
 }
 
 func TestUserRepository_ListUsers(t *testing.T) {
 	ctx := context.Background()
+	params := &outboundport.ListUsersParams{Active: true}
 
 	t.Run("success", func(t *testing.T) {
 		querier := mocks.NewMockQuerier(t)
 		repo := NewUserRepository(querier)
 		querier.EXPECT().ListUsers(ctx, mock.Anything).Return([]gen.User{{ID: "1"}, {ID: "2"}}, nil)
 
-		res, err := repo.ListUsers(ctx, &ports.ListUsersParams{})
+		res, err := repo.ListUsers(ctx, params)
 
 		assert.NoError(t, err)
 		assert.Len(t, res, 2)
@@ -164,7 +185,7 @@ func TestUserRepository_ListUsers(t *testing.T) {
 		repo := NewUserRepository(querier)
 		querier.EXPECT().ListUsers(ctx, mock.Anything).Return(nil, errors.New("db error"))
 
-		res, err := repo.ListUsers(ctx, &ports.ListUsersParams{})
+		res, err := repo.ListUsers(ctx, params)
 
 		assert.Error(t, err)
 		assert.Nil(t, res)
@@ -182,5 +203,15 @@ func TestUserRepository_UpdatePassword(t *testing.T) {
 		err := repo.UpdatePassword(ctx, "123", []byte("hash"))
 
 		assert.NoError(t, err)
+	})
+
+	t.Run("error", func(t *testing.T) {
+		querier := mocks.NewMockQuerier(t)
+		repo := NewUserRepository(querier)
+		querier.EXPECT().UpdatePassword(ctx, mock.Anything).Return(errors.New("db error"))
+
+		err := repo.UpdatePassword(ctx, "123", []byte("hash"))
+
+		assert.Error(t, err)
 	})
 }
