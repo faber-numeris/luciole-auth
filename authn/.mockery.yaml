@@ -1,0 +1,33 @@
+with-expecter: true
+filename: "mock_{{.InterfaceName}}.go"
+outpkg: "mocks"
+output: "internal/mocks"
+all: true
+recursive: true
+packages:
+  github.com/faber-numeris/luciole-auth/authn/internal/app:
+    config:
+      dir: "internal/mocks"
+    interfaces:
+      UserService:
+      HashingService:
+      EncryptionService:
+  github.com/faber-numeris/luciole-auth/authn/internal/app/ports:
+    config:
+      dir: "internal/mocks"
+    interfaces:
+      UserRepository:
+      UserConfirmationRepository:
+      Mailer:
+  github.com/faber-numeris/luciole-auth/authn/internal/adapters/postgres/gen:
+    config:
+      dir: "internal/mocks"
+    interfaces:
+      Querier:
+  github.com/faber-numeris/luciole-auth/authn/internal/infrastructure/config:
+    config:
+      dir: "internal/mocks"
+    interfaces:
+      IServiceConfig:
+      IDatabaseConfig:
+      IMailConfig:
