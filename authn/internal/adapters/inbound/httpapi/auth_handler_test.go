@@ -98,7 +98,9 @@ func TestHandler_LoginUser(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		userService := mocks.NewMockUserService(t)
 		handler := NewHandler(userService, nil, nil)
-		userService.EXPECT().VerifyPassword(ctx, "test@example.com", "password").
+		userService.EXPECT().VerifyPassword(ctx, "test@example.com", []byte("password")).
+			Return(&domain.UserCredentials{Email: "test@example.com"}, nil)
+		userService.EXPECT().GetUserByEmail(ctx, "test@example.com").
 			Return(&domain.User{ID: "123", Email: "test@example.com"}, nil)
 
 		res, err := handler.LoginUser(ctx, req)
@@ -110,7 +112,7 @@ func TestHandler_LoginUser(t *testing.T) {
 	t.Run("unauthorized", func(t *testing.T) {
 		userService := mocks.NewMockUserService(t)
 		handler := NewHandler(userService, nil, nil)
-		userService.EXPECT().VerifyPassword(ctx, "test@example.com", "password").
+		userService.EXPECT().VerifyPassword(ctx, "test@example.com", []byte("password")).
 			Return(nil, errors.New("invalid"))
 
 		res, err := handler.LoginUser(ctx, req)
@@ -122,7 +124,9 @@ func TestHandler_LoginUser(t *testing.T) {
 	t.Run("converter error", func(t *testing.T) {
 		userService := mocks.NewMockUserService(t)
 		handler := NewHandler(userService, nil, nil)
-		userService.EXPECT().VerifyPassword(ctx, "test@example.com", "password").
+		userService.EXPECT().VerifyPassword(ctx, "test@example.com", []byte("password")).
+			Return(&domain.UserCredentials{Email: "test@example.com"}, nil)
+		userService.EXPECT().GetUserByEmail(ctx, "test@example.com").
 			Return(&domain.User{ID: "123"}, nil)
 
 		patches := gomonkey.ApplyMethod(&converterImpl, "UserModelToApiUser", func(_ *generated.ConverterImpl, _ domain.User) (api.User, error) {
@@ -338,7 +342,7 @@ func TestHandler_ResetPassword(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		userService := mocks.NewMockUserService(t)
 		handler := NewHandler(userService, nil, nil)
-		userService.EXPECT().ResetPassword(ctx, "token", "new-pass").Return(nil)
+		userService.EXPECT().ResetPassword(ctx, "token", []byte("new-pass")).Return(nil)
 
 		res, err := handler.ResetPassword(ctx, &api.PasswordResetConfirm{Token: "token", NewPassword: "new-pass"})
 
@@ -349,7 +353,7 @@ func TestHandler_ResetPassword(t *testing.T) {
 	t.Run("error", func(t *testing.T) {
 		userService := mocks.NewMockUserService(t)
 		handler := NewHandler(userService, nil, nil)
-		userService.EXPECT().ResetPassword(ctx, "token", "new-pass").Return(errors.New("invalid"))
+		userService.EXPECT().ResetPassword(ctx, "token", []byte("new-pass")).Return(errors.New("invalid"))
 
 		res, err := handler.ResetPassword(ctx, &api.PasswordResetConfirm{Token: "token", NewPassword: "new-pass"})
 

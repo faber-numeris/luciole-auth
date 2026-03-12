@@ -1,19 +1,18 @@
 info:
   name: Confirm user registration
   type: http
-  seq: 1
+  seq: 4
 
 http:
   method: GET
-  url: http://{{baseUrl}}/authn/confirm?token=<string>
+  url: http://{{baseUrl}}/authn/confirm?token={{USER_REGISTRATION_TOKEN}}
   headers:
     - name: Accept
       value: application/json
   params:
     - name: token
-      value: <string>
+      value: "{{USER_REGISTRATION_TOKEN}}"
       type: query
-      description: (Required) Confirmation token sent to the user's email
   auth: inherit
 
 settings:

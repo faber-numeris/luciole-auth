@@ -5,7 +5,7 @@ import (
 	"errors"
 	"log/slog"
 
-	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/inbound/httpapi/gen"
+	api "github.com/faber-numeris/luciole-auth/authn/internal/adapters/inbound/httpapi/gen"
 	inboundport "github.com/faber-numeris/luciole-auth/authn/internal/app/ports/inbound"
 	"github.com/faber-numeris/luciole-auth/authn/internal/domain"
 	"github.com/faber-numeris/luciole-auth/authn/internal/platform/mapper/generated"
@@ -121,12 +121,21 @@ func (h *Handler) GetUserProfile(ctx context.Context) (api.GetUserProfileRes, er
 }
 
 func (h *Handler) LoginUser(ctx context.Context, req *api.LoginRequest) (api.LoginUserRes, error) {
-	user, err := h.userService.VerifyPassword(ctx, req.Email, req.Password)
+	_, err := h.userService.VerifyPassword(ctx, req.Email, []byte(req.Password))
 	if err != nil {
 		slog.Error("Login failed", "email", req.Email, "error", err)
 		return &api.LoginUserUnauthorized{
 			Error:   "INVALID_CREDENTIALS",
 			Message: "Invalid email or password",
+			Details: api.OptErrorDetails{},
+		}, nil
+	}
+
+	user, err := h.userService.GetUserByEmail(ctx, req.Email)
+	if err != nil || user == nil {
+		return &api.LoginUserInternalServerError{
+			Error:   "INTERNAL_ERROR",
+			Message: "Could not retrieve user details",
 			Details: api.OptErrorDetails{},
 		}, nil
 	}
@@ -211,7 +220,7 @@ func (h *Handler) RequestPasswordReset(ctx context.Context, req *api.PasswordRes
 }
 
 func (h *Handler) ResetPassword(ctx context.Context, req *api.PasswordResetConfirm) (api.ResetPasswordRes, error) {
-	err := h.userService.ResetPassword(ctx, req.Token, req.NewPassword)
+	err := h.userService.ResetPassword(ctx, req.Token, []byte(req.NewPassword))
 	if err != nil {
 		slog.Error("Password reset failed", "error", err)
 		return &api.ResetPasswordBadRequest{

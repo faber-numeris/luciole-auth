@@ -137,3 +137,19 @@ func (r *userRepository) UpdatePassword(ctx context.Context, userID string, pass
 		Passwordhash: passwordHash,
 	})
 }
+
+func (r *userRepository) GetUserCredentials(ctx context.Context, email string) (*domain.UserCredentials, error) {
+	sqlcUser, err := r.querier.GetUserByEmail(ctx, email)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	result, err := conversion.UserCredentialsModelFromSQLC(sqlcUser)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}

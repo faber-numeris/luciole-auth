@@ -24,6 +24,12 @@ func (c *ConverterImpl) UserConfirmationModelFromSQLC(source gen.UserConfirmatio
 	domainUserConfirmation.UpdatedAt = c.pTimeTimeToTimeTime(source.UpdatedAt)
 	return domainUserConfirmation, nil
 }
+func (c *ConverterImpl) UserCredentialsModelFromSQLC(source gen.User) (domain.UserCredentials, error) {
+	var domainUserCredentials domain.UserCredentials
+	domainUserCredentials.Email = source.Email
+	domainUserCredentials.PasswordHash = source.PasswordHash
+	return domainUserCredentials, nil
+}
 func (c *ConverterImpl) UserModelFromSQLC(source gen.User) (domain.User, error) {
 	var domainUser domain.User
 	domainUser.ID = source.ID

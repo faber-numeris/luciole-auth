@@ -40,8 +40,8 @@ type UserProfile struct {
 	Timezone  string `json:"timezone,omitempty"`
 }
 
-type UserWithPassword struct {
-	User
+type UserCredentials struct {
+	Email        string
 	PasswordHash []byte
 }
 

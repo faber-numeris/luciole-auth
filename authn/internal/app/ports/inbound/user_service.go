@@ -42,8 +42,8 @@ type UserService interface {
 	RequestPasswordReset(ctx context.Context, email string) (string, error)
 
 	// ResetPassword resets the user's password using the reset token
-	ResetPassword(ctx context.Context, token string, newPassword string) error
+	ResetPassword(ctx context.Context, token string, newPassword []byte) error
 
 	// VerifyPassword verifies if the provided password matches the user's password
-	VerifyPassword(ctx context.Context, email string, password string) (*domain.User, error)
+	VerifyPassword(ctx context.Context, email string, password []byte) (*domain.UserCredentials, error)
 }
