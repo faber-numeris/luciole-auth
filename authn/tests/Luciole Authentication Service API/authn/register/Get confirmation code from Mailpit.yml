@@ -1,0 +1,36 @@
+info:
+  name: Get confirmation code from Mailpit
+  type: http
+  seq: 3
+
+http:
+  method: GET
+  url: http://localhost:8025/api/v1/messages?limit=1
+  params:
+    - name: limit
+      value: "1"
+      type: query
+  auth: inherit
+
+runtime:
+  scripts:
+    - type: after-response
+      code: |-
+        const messages = res.body.messages;
+
+        const snippet = messages[0].Snippet;
+
+        // 1. Split the string by the word "token="
+        const parts = snippet.split('token=');
+
+        // 2. The second part of the split (index 1) will be the token
+        if (parts.length > 1) {
+            const token = parts[1];
+            bru.setVar("USER_REGISTRATION_TOKEN",token)
+        }
+
+settings:
+  encodeUrl: true
+  timeout: 0
+  followRedirects: true
+  maxRedirects: 5

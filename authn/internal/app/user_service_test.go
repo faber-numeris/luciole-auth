@@ -405,21 +405,21 @@ func TestUserService_VerifyPassword(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		userRepo := mocks.NewMockUserRepository(t)
 		service := app.NewUserService(userRepo, nil, nil, nil)
-		expectedUser := &domain.User{Email: "test@example.com"}
-		userRepo.EXPECT().GetUserByEmail(ctx, "test@example.com").Return(expectedUser, nil)
+		expectedCreds := &domain.UserCredentials{Email: "test@example.com", PasswordHash: []byte("password")}
+		userRepo.EXPECT().GetUserCredentials(ctx, "test@example.com").Return(expectedCreds, nil)
 
-		user, err := service.VerifyPassword(ctx, "test@example.com", "password")
+		user, err := service.VerifyPassword(ctx, "test@example.com", []byte("password"))
 
 		assert.NoError(t, err)
-		assert.Equal(t, expectedUser, user)
+		assert.Equal(t, expectedCreds, user)
 	})
 
 	t.Run("user not found", func(t *testing.T) {
 		userRepo := mocks.NewMockUserRepository(t)
 		service := app.NewUserService(userRepo, nil, nil, nil)
-		userRepo.EXPECT().GetUserByEmail(ctx, "unknown@example.com").Return(nil, nil)
+		userRepo.EXPECT().GetUserCredentials(ctx, "unknown@example.com").Return(nil, nil)
 
-		user, err := service.VerifyPassword(ctx, "unknown@example.com", "password")
+		user, err := service.VerifyPassword(ctx, "unknown@example.com", []byte("password"))
 
 		assert.Error(t, err)
 		assert.Nil(t, user)
@@ -429,9 +429,9 @@ func TestUserService_VerifyPassword(t *testing.T) {
 	t.Run("db error", func(t *testing.T) {
 		userRepo := mocks.NewMockUserRepository(t)
 		service := app.NewUserService(userRepo, nil, nil, nil)
-		userRepo.EXPECT().GetUserByEmail(ctx, "error").Return(nil, errors.New("db error"))
+		userRepo.EXPECT().GetUserCredentials(ctx, "error").Return(nil, errors.New("db error"))
 
-		user, err := service.VerifyPassword(ctx, "error", "password")
+		user, err := service.VerifyPassword(ctx, "error", []byte("password"))
 
 		assert.Error(t, err)
 		assert.Nil(t, user)
@@ -447,7 +447,7 @@ func TestUserService_RequestPasswordReset(t *testing.T) {
 
 func TestUserService_ResetPassword(t *testing.T) {
 	service := app.NewUserService(nil, nil, nil, nil)
-	err := service.ResetPassword(context.Background(), "token", "new")
+	err := service.ResetPassword(context.Background(), "token", []byte("new"))
 	assert.Error(t, err)
 	assert.Equal(t, "not implemented", err.Error())
 }

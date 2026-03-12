@@ -45,6 +45,9 @@ type Converter interface {
 
 	// goverter:ignore UserEmail
 	UserConfirmationModelFromSQLC(confirmation gen.UserConfirmation) (domain.UserConfirmation, error)
+
+	UserCredentialsModelFromSQLC(user gen.User) (domain.UserCredentials, error)
+
 	/*=================================================
 	  Conversions from Model to SQLC types
 	 ==================================================*/

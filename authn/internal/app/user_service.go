@@ -1,6 +1,7 @@
 package app
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/hex"
@@ -233,24 +234,25 @@ func (s *userService) RequestPasswordReset(ctx context.Context, email string) (s
 }
 
 // ResetPassword resets the user's password using the reset token
-func (s *userService) ResetPassword(ctx context.Context, token string, newPassword string) error {
+func (s *userService) ResetPassword(ctx context.Context, token string, newPassword []byte) error {
 	slog.Info("Resetting password")
 	return errors.New("not implemented")
 }
 
 // VerifyPassword verifies if the provided password matches the user's password
-func (s *userService) VerifyPassword(ctx context.Context, email string, password string) (*domain.User, error) {
+func (s *userService) VerifyPassword(ctx context.Context, email string, password []byte) (*domain.UserCredentials, error) {
 	slog.Info("Verifying password", "email", email)
-	user, err := s.userRepo.GetUserByEmail(ctx, email)
-	if err != nil {
+	user, err := s.userRepo.GetUserCredentials(ctx, email)
+	if err != nil || user == nil {
 		slog.Error("Failed to get user for password verification", "email", email, "error", err)
-		return nil, fmt.Errorf("failed to get user by email: %w", err)
+		return nil, domain.ErrInvalidCredentials
 	}
 
-	if user == nil {
-		slog.Warn("Invalid credentials: user not found", "email", email)
-		return nil, errors.New("invalid credentials")
+	if !(user.Email == email && bytes.Equal(user.PasswordHash, password)) {
+		slog.Error("Email or Password do not match", "email", email, "userEmail", user.Email)
+		return nil, domain.ErrInvalidCredentials
 	}
+
 	slog.Debug("User found for password verification", "email", email)
 
 	return user, nil
