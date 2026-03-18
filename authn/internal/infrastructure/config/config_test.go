@@ -33,10 +33,10 @@ func TestConfig(t *testing.T) {
 
 	t.Run("MailConfig", func(t *testing.T) {
 		cfg := &MailConfig{
-			MailFrom_:               "from",
-			MailFromName_:           "name",
-			SMTPHost_:               "host",
-			SMTPPort_:               1025,
+			MailFrom_:              "from",
+			MailFromName_:          "name",
+			SMTPHost_:              "host",
+			SMTPPort_:              1025,
 			ConfirmationURLFormat_: "fmt",
 		}
 		assert.Equal(t, "from", cfg.MailFrom())
@@ -46,7 +46,7 @@ func TestConfig(t *testing.T) {
 		assert.Equal(t, "fmt", cfg.ConfirmationURLFormat())
 	})
 
-	t.Run("Load success", func(t *testing.T) {
+	t.Run("LoadConfig success", func(t *testing.T) {
 		os.Setenv("DB_HOST", "localhost")
 		os.Setenv("DB_USER", "user")
 		os.Setenv("DB_PASSWORD", "pass")
@@ -56,7 +56,7 @@ func TestConfig(t *testing.T) {
 		os.Setenv("MAIL_FROM_NAME", "name")
 		os.Setenv("SMTP_HOST", "host")
 		os.Setenv("CONFIRMATION_URL_FORMAT", "fmt")
-		
+
 		defer func() {
 			os.Unsetenv("DB_HOST")
 			os.Unsetenv("DB_USER")
@@ -69,14 +69,14 @@ func TestConfig(t *testing.T) {
 			os.Unsetenv("CONFIRMATION_URL_FORMAT")
 		}()
 
-		cfg, err := Load()
+		cfg, err := LoadConfig()
 		assert.NoError(t, err)
 		assert.Equal(t, "localhost", cfg.DBHost())
 		assert.Equal(t, "from", cfg.MailFrom())
 		assert.Equal(t, 8080, cfg.Port())
 	})
 
-	t.Run("Load error", func(t *testing.T) {
+	t.Run("LoadConfig error", func(t *testing.T) {
 		// Ensure environment is clean of required variables
 		os.Unsetenv("DB_HOST")
 		os.Unsetenv("DB_USER")
@@ -88,7 +88,7 @@ func TestConfig(t *testing.T) {
 		os.Unsetenv("SMTP_HOST")
 		os.Unsetenv("CONFIRMATION_URL_FORMAT")
 
-		_, err := Load()
+		_, err := LoadConfig()
 		assert.Error(t, err)
 		assert.Contains(t, err.Error(), "required environment variable")
 	})

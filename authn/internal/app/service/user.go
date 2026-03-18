@@ -1,4 +1,4 @@
-package app
+package service
 
 import (
 	"bytes"
@@ -19,24 +19,21 @@ import (
 
 // userService implements the inboundport.UserService interface
 type userService struct {
-	userRepo         outboundport.UserRepository
-	confirmationRepo outboundport.UserConfirmationRepository
-	mailService      outboundport.Mailer
-	hashingService   inboundport.HashingService
+	repository     outboundport.Repository
+	mailService    outboundport.Mailer
+	hashingService inboundport.HashingService
 }
 
 // NewUserService creates a new instance of inboundport.UserService
 func NewUserService(
-	userRepo outboundport.UserRepository,
-	confirmationRepo outboundport.UserConfirmationRepository,
+	repository outboundport.Repository,
 	hashingService inboundport.HashingService,
 	mailService outboundport.Mailer,
 ) inboundport.UserService {
 	return &userService{
-		userRepo:         userRepo,
-		confirmationRepo: confirmationRepo,
-		hashingService:   hashingService,
-		mailService:      mailService,
+		hashingService: hashingService,
+		mailService:    mailService,
+		repository:     repository,
 	}
 }
 
@@ -50,7 +47,7 @@ func (s *userService) RegisterUser(ctx context.Context, user *domain.User, passw
 	}
 	slog.Debug("Password hashed successfully")
 
-	createdUser, err := s.userRepo.CreateUser(ctx, user, passwordHash)
+	createdUser, err := s.repository.CreateUser(ctx, user, passwordHash)
 	var pgErr *pgconn.PgError
 	if err != nil {
 		slog.Error("Failed to create user in repository", "error", err)
@@ -63,7 +60,7 @@ func (s *userService) RegisterUser(ctx context.Context, user *domain.User, passw
 
 	confirmationToken := generateToken()
 	expiresAt := time.Now().Add(24 * time.Hour)
-	confirmation, err := s.confirmationRepo.CreateUserConfirmation(ctx, createdUser.ID, confirmationToken, expiresAt)
+	confirmation, err := s.repository.CreateUserConfirmation(ctx, createdUser.ID, confirmationToken, expiresAt)
 	if err != nil {
 		slog.Error("Failed to create confirmation token", "error", err)
 		return nil, fmt.Errorf("failed to create confirmation token: %w", err)
@@ -83,7 +80,7 @@ func (s *userService) RegisterUser(ctx context.Context, user *domain.User, passw
 // GetUserByID retrieves a user by their ID
 func (s *userService) GetUserByID(ctx context.Context, id string) (*domain.User, error) {
 	slog.Info("Getting user by ID", "id", id)
-	user, err := s.userRepo.GetUserByID(ctx, id)
+	user, err := s.repository.GetUserByID(ctx, id)
 	if err != nil {
 		slog.Error("Failed to get user by ID", "id", id, "error", err)
 		return nil, fmt.Errorf("failed to get user by id: %w", err)
@@ -101,7 +98,7 @@ func (s *userService) GetUserByID(ctx context.Context, id string) (*domain.User,
 // GetUserByEmail retrieves a user by their email
 func (s *userService) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
 	slog.Info("Getting user by email", "email", email)
-	user, err := s.userRepo.GetUserByEmail(ctx, email)
+	user, err := s.repository.GetUserByEmail(ctx, email)
 	if err != nil {
 		slog.Error("Failed to get user by email", "email", email, "error", err)
 		return nil, fmt.Errorf("failed to get user by email: %w", err)
@@ -119,7 +116,7 @@ func (s *userService) GetUserByEmail(ctx context.Context, email string) (*domain
 // UpdateUserProfile updates an existing user's profile
 func (s *userService) UpdateUserProfile(ctx context.Context, userID string, req *domain.User) (*domain.User, error) {
 	slog.Info("Updating user profile", "userID", userID)
-	existingUser, err := s.userRepo.GetUserByID(ctx, userID)
+	existingUser, err := s.repository.GetUserByID(ctx, userID)
 	if err != nil {
 		slog.Error("Failed to get user for update", "userID", userID, "error", err)
 		return nil, fmt.Errorf("failed to get user: %w", err)
@@ -149,7 +146,7 @@ func (s *userService) UpdateUserProfile(ctx context.Context, userID string, req 
 		}
 	}
 
-	err = s.userRepo.UpdateUser(ctx, existingUser)
+	err = s.repository.UpdateUser(ctx, existingUser)
 	if err != nil {
 		slog.Error("Failed to update user in repository", "userID", userID, "error", err)
 		return nil, fmt.Errorf("failed to update user: %w", err)
@@ -162,7 +159,7 @@ func (s *userService) UpdateUserProfile(ctx context.Context, userID string, req 
 // DeleteUser deactivates a user account
 func (s *userService) DeleteUser(ctx context.Context, userID string) error {
 	slog.Info("Deleting user", "userID", userID)
-	existingUser, err := s.userRepo.GetUserByID(ctx, userID)
+	existingUser, err := s.repository.GetUserByID(ctx, userID)
 	if err != nil {
 		slog.Error("Failed to get user for deletion", "userID", userID, "error", err)
 		return fmt.Errorf("failed to get user: %w", err)
@@ -174,7 +171,7 @@ func (s *userService) DeleteUser(ctx context.Context, userID string) error {
 	}
 	slog.Debug("User found for deletion", "userID", userID)
 
-	err = s.userRepo.DeleteUser(ctx, userID)
+	err = s.repository.DeleteUser(ctx, userID)
 	if err != nil {
 		slog.Error("Failed to delete user in repository", "userID", userID, "error", err)
 		return fmt.Errorf("failed to delete user: %w", err)
@@ -193,7 +190,7 @@ func (s *userService) ListUsers(ctx context.Context, params *inboundport.ListUse
 		CreatedEndRange:   params.CreatedEndRange,
 		Active:            params.Active,
 	}
-	users, err := s.userRepo.ListUsers(ctx, repoParams)
+	users, err := s.repository.ListUsers(ctx, repoParams)
 	if err != nil {
 		slog.Error("Failed to list users from repository", "error", err)
 		return nil, fmt.Errorf("failed to list users: %w", err)
@@ -205,7 +202,7 @@ func (s *userService) ListUsers(ctx context.Context, params *inboundport.ListUse
 // ConfirmUserRegistration confirms a user's email based on token
 func (s *userService) ConfirmUserRegistration(ctx context.Context, token string) error {
 	slog.Info("Confirming user registration")
-	userID, err := s.confirmationRepo.GetUserConfirmationByToken(ctx, token)
+	userID, err := s.repository.GetUserConfirmationByToken(ctx, token)
 	if err != nil {
 		slog.Error("Failed to get user by confirmation token", "error", err)
 		return fmt.Errorf("failed to get user by confirmation token: %w", err)
@@ -217,7 +214,7 @@ func (s *userService) ConfirmUserRegistration(ctx context.Context, token string)
 	}
 	slog.Debug("User confirmation found", "userID", userID)
 
-	err = s.confirmationRepo.ConfirmUserRegistration(ctx, userID)
+	err = s.repository.ConfirmUserRegistration(ctx, userID)
 	if err != nil {
 		slog.Error("Failed to confirm user email", "userID", userID, "error", err)
 		return fmt.Errorf("failed to confirm user email: %w", err)
@@ -242,7 +239,7 @@ func (s *userService) ResetPassword(ctx context.Context, token string, newPasswo
 // VerifyPassword verifies if the provided password matches the user's password
 func (s *userService) VerifyPassword(ctx context.Context, email string, password []byte) (*domain.UserCredentials, error) {
 	slog.Info("Verifying password", "email", email)
-	user, err := s.userRepo.GetUserCredentials(ctx, email)
+	user, err := s.repository.GetUserCredentials(ctx, email)
 	if err != nil || user == nil {
 		slog.Error("Failed to get user for password verification", "email", email, "error", err)
 		return nil, domain.ErrInvalidCredentials

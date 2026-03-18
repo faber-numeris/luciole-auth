@@ -7,6 +7,11 @@ import (
 	"github.com/faber-numeris/luciole-auth/authn/internal/domain"
 )
 
+type Repository interface {
+	UserRepository
+	UserConfirmationRepository
+}
+
 type UserRepository interface {
 	CreateUser(ctx context.Context, user *domain.User, passwordHash []byte) (*domain.User, error)
 	GetUserByID(ctx context.Context, id string) (*domain.User, error)

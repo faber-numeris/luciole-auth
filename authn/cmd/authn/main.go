@@ -5,6 +5,7 @@ import (
 	"os"
 	"time"
 
+	"github.com/faber-numeris/luciole-auth/authn/internal/app/bootstrap"
 	"github.com/lmittmann/tint"
 )
 
@@ -16,7 +17,7 @@ func main() {
 		}),
 	))
 
-	app := NewApp()
+	app := bootstrap.NewApp()
 	if err := app.Run(); err != nil {
 		slog.Error("Application error", "error", err)
 	}

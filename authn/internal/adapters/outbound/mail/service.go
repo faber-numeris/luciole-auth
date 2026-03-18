@@ -6,6 +6,6 @@ import (
 )
 
 // NewService creates a new mailer service
-func NewService(cfg config.IMailConfig) outboundport.Mailer {
-	return NewMailpit(cfg)
+func NewService() outboundport.Mailer {
+	return NewMailpit(config.LoadConfig())
 }

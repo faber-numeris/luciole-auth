@@ -1,7 +1,5 @@
 package config
 
-import "github.com/caarlos0/env/v11"
-
 type IServiceConfig interface {
 	Port() int
 	AllowedOrigins() []string
@@ -18,9 +16,4 @@ func (c *ServiceConfig) Port() int {
 
 func (c *ServiceConfig) AllowedOrigins() []string {
 	return c.AllowedOrigins_
-}
-
-func Load() (IAppConfig, error) {
-	cfg, err := env.ParseAs[AppConfig]()
-	return &cfg, err
 }
