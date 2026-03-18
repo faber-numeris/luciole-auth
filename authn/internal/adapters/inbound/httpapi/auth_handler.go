@@ -6,7 +6,7 @@ import (
 	"log/slog"
 
 	api "github.com/faber-numeris/luciole-auth/authn/internal/adapters/inbound/httpapi/gen"
-	inboundport "github.com/faber-numeris/luciole-auth/authn/internal/app/ports/inbound"
+	inboundport "github.com/faber-numeris/luciole-auth/authn/internal/ports/inbound"
 	"github.com/faber-numeris/luciole-auth/authn/internal/domain"
 	"github.com/faber-numeris/luciole-auth/authn/internal/platform/mapper/generated"
 )

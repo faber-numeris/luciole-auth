@@ -41,7 +41,6 @@ func TestMailpit_SendConfirmationEmail(t *testing.T) {
 }
 
 func TestNewService(t *testing.T) {
-	mockCfg := mocks.NewMockIMailConfig(t)
-	svc := NewService(mockCfg)
+	svc := NewService()
 	assert.NotNil(t, svc)
 }

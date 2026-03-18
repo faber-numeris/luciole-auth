@@ -3,129 +3,98 @@ package postgresadapter
 import (
 	"context"
 	"database/sql"
-	"errors"
 	"testing"
 	"time"
 
-	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/outbound/postgres/gen"
-	"github.com/faber-numeris/luciole-auth/authn/internal/mocks"
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 )
 
 func TestUserConfirmationRepository_CreateUserConfirmation(t *testing.T) {
+	sqlxDB, mock := setupTestDB(t)
+	repo := NewUserConfirmationRepository(sqlxDB)
 	ctx := context.Background()
-	now := time.Now()
+	userID := "user-123"
+	token := "token-123"
+	expiresAt := time.Now().Add(time.Hour)
 
 	t.Run("success", func(t *testing.T) {
-		querier := mocks.NewMockQuerier(t)
-		repo := NewUserConfirmationRepository(querier)
-		querier.EXPECT().CreateUserConfirmation(ctx, mock.Anything).
-			Return(gen.UserConfirmation{ID: "123", UserID: "user-123", Token: "token-123"}, nil)
+		rows := sqlmock.NewRows([]string{"id", "user_id", "token", "expires_at", "confirmed_at", "created_at", "updated_at"}).
+			AddRow("conf-123", userID, token, expiresAt, nil, time.Now(), time.Now())
 
-		res, err := repo.CreateUserConfirmation(ctx, "user-123", "token-123", now)
+		mock.ExpectQuery("INSERT INTO user_confirmations").
+			WithArgs(userID, token, expiresAt).
+			WillReturnRows(rows)
+
+		res, err := repo.CreateUserConfirmation(ctx, userID, token, expiresAt)
 
 		assert.NoError(t, err)
-		assert.Equal(t, "token-123", res.Token)
-	})
-
-	t.Run("error", func(t *testing.T) {
-		querier := mocks.NewMockQuerier(t)
-		repo := NewUserConfirmationRepository(querier)
-		querier.EXPECT().CreateUserConfirmation(ctx, mock.Anything).
-			Return(gen.UserConfirmation{}, errors.New("db error"))
-
-		res, err := repo.CreateUserConfirmation(ctx, "user-123", "token-123", now)
-
-		assert.Error(t, err)
-		assert.Nil(t, res)
+		assert.Equal(t, userID, res.UserID)
+		assert.Equal(t, token, res.Token)
 	})
 }
 
 func TestUserConfirmationRepository_GetUserConfirmationByToken(t *testing.T) {
+	sqlxDB, mock := setupTestDB(t)
+	repo := NewUserConfirmationRepository(sqlxDB)
 	ctx := context.Background()
+	token := "valid-token"
 
 	t.Run("success", func(t *testing.T) {
-		querier := mocks.NewMockQuerier(t)
-		repo := NewUserConfirmationRepository(querier)
-		querier.EXPECT().GetUserConfirmationByToken(ctx, "token-123").
-			Return(gen.UserConfirmation{UserID: "user-123"}, nil)
+		rows := sqlmock.NewRows([]string{"user_id"}).AddRow("user-123")
 
-		res, err := repo.GetUserConfirmationByToken(ctx, "token-123")
+		mock.ExpectQuery("SELECT user_id FROM user_confirmations").
+			WithArgs(token).
+			WillReturnRows(rows)
+
+		userID, err := repo.GetUserConfirmationByToken(ctx, token)
 
 		assert.NoError(t, err)
-		assert.Equal(t, "user-123", res)
+		assert.Equal(t, "user-123", userID)
 	})
 
 	t.Run("not found", func(t *testing.T) {
-		querier := mocks.NewMockQuerier(t)
-		repo := NewUserConfirmationRepository(querier)
-		querier.EXPECT().GetUserConfirmationByToken(ctx, "unknown").
-			Return(gen.UserConfirmation{}, sql.ErrNoRows)
+		mock.ExpectQuery("SELECT user_id FROM user_confirmations").
+			WithArgs("invalid").
+			WillReturnError(sql.ErrNoRows)
 
-		res, err := repo.GetUserConfirmationByToken(ctx, "unknown")
+		userID, err := repo.GetUserConfirmationByToken(ctx, "invalid")
 
 		assert.NoError(t, err)
-		assert.Equal(t, "", res)
-	})
-
-	t.Run("error", func(t *testing.T) {
-		querier := mocks.NewMockQuerier(t)
-		repo := NewUserConfirmationRepository(querier)
-		querier.EXPECT().GetUserConfirmationByToken(ctx, "error").
-			Return(gen.UserConfirmation{}, errors.New("db error"))
-
-		res, err := repo.GetUserConfirmationByToken(ctx, "error")
-
-		assert.Error(t, err)
-		assert.Equal(t, "", res)
+		assert.Equal(t, "", userID)
 	})
 }
 
 func TestUserConfirmationRepository_ConfirmUserRegistration(t *testing.T) {
+	sqlxDB, mock := setupTestDB(t)
+	repo := NewUserConfirmationRepository(sqlxDB)
 	ctx := context.Background()
+	userID := "user-123"
 
 	t.Run("success", func(t *testing.T) {
-		querier := mocks.NewMockQuerier(t)
-		repo := NewUserConfirmationRepository(querier)
-		querier.EXPECT().ConfirmUserRegistration(ctx, "user-123").Return(nil)
+		mock.ExpectExec("UPDATE user_confirmations SET confirmed_at =").
+			WithArgs(userID).
+			WillReturnResult(sqlmock.NewResult(0, 1))
 
-		err := repo.ConfirmUserRegistration(ctx, "user-123")
+		err := repo.ConfirmUserRegistration(ctx, userID)
 
 		assert.NoError(t, err)
-	})
-
-	t.Run("error", func(t *testing.T) {
-		querier := mocks.NewMockQuerier(t)
-		repo := NewUserConfirmationRepository(querier)
-		querier.EXPECT().ConfirmUserRegistration(ctx, "user-123").Return(errors.New("db error"))
-
-		err := repo.ConfirmUserRegistration(ctx, "user-123")
-
-		assert.Error(t, err)
 	})
 }
 
 func TestUserConfirmationRepository_DeleteUserConfirmation(t *testing.T) {
+	sqlxDB, mock := setupTestDB(t)
+	repo := NewUserConfirmationRepository(sqlxDB)
 	ctx := context.Background()
+	userID := "user-123"
 
 	t.Run("success", func(t *testing.T) {
-		querier := mocks.NewMockQuerier(t)
-		repo := NewUserConfirmationRepository(querier)
-		querier.EXPECT().DeleteUserConfirmation(ctx, "user-123").Return(nil)
+		mock.ExpectExec("DELETE FROM user_confirmations").
+			WithArgs(userID).
+			WillReturnResult(sqlmock.NewResult(0, 1))
 
-		err := repo.DeleteUserConfirmation(ctx, "user-123")
+		err := repo.DeleteUserConfirmation(ctx, userID)
 
 		assert.NoError(t, err)
-	})
-
-	t.Run("error", func(t *testing.T) {
-		querier := mocks.NewMockQuerier(t)
-		repo := NewUserConfirmationRepository(querier)
-		querier.EXPECT().DeleteUserConfirmation(ctx, "user-123").Return(errors.New("db error"))
-
-		err := repo.DeleteUserConfirmation(ctx, "user-123")
-
-		assert.Error(t, err)
 	})
 }

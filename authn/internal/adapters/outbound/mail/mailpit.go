@@ -6,7 +6,7 @@ import (
 	"net/smtp"
 	"strings"
 
-	outboundport "github.com/faber-numeris/luciole-auth/authn/internal/app/ports/outbound"
+	outboundport "github.com/faber-numeris/luciole-auth/authn/internal/ports/outbound"
 	"github.com/faber-numeris/luciole-auth/authn/internal/domain"
 	"github.com/faber-numeris/luciole-auth/authn/internal/infrastructure/config"
 )

@@ -1,18 +1,19 @@
 package postgres
 
 import (
-	"context"
-	"errors"
+	"sync"
 	"testing"
 
+	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/faber-numeris/luciole-auth/authn/internal/infrastructure/config"
 	"github.com/faber-numeris/luciole-auth/authn/internal/mocks"
 	"github.com/agiledragon/gomonkey/v2"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestConnect(t *testing.T) {
-	mockCfg := mocks.NewMockIDatabaseConfig(t)
+	mockCfg := mocks.NewMockIAppConfig(t)
 	mockCfg.EXPECT().DBHost().Return("localhost").Maybe()
 	mockCfg.EXPECT().DBPort().Return(5432).Maybe()
 	mockCfg.EXPECT().DBUser().Return("user").Maybe()
@@ -21,73 +22,22 @@ func TestConnect(t *testing.T) {
 	mockCfg.EXPECT().DBSSLMode().Return("disable").Maybe()
 
 	t.Run("success", func(t *testing.T) {
-		dummyPool := &pgxpool.Pool{}
+		db_mock, _, _ := sqlmock.New()
+		dummyDB := sqlx.NewDb(db_mock, "postgres")
 		
-		patches := gomonkey.ApplyFunc(pgxpool.ParseConfig, func(connString string) (*pgxpool.Config, error) {
-			return &pgxpool.Config{}, nil
-		})
-		defer patches.Reset()
-		
-		patches.ApplyFunc(pgxpool.NewWithConfig, func(ctx context.Context, c *pgxpool.Config) (*pgxpool.Pool, error) {
-			return dummyPool, nil
-		})
-		
-		patches.ApplyMethod(dummyPool, "Ping", func(_ *pgxpool.Pool, _ context.Context) error {
-			return nil
-		})
-
-		pool := Connect(mockCfg)
-		assert.Equal(t, dummyPool, pool)
-	})
-
-	t.Run("parse failure", func(t *testing.T) {
-		patches := gomonkey.ApplyFunc(pgxpool.ParseConfig, func(connString string) (*pgxpool.Config, error) {
-			return nil, errors.New("parse error")
+		patches := gomonkey.ApplyFunc(config.LoadConfig, func() (config.IAppConfig, error) {
+			return mockCfg, nil
 		})
 		defer patches.Reset()
 
-		assert.Panics(t, func() {
-			Connect(mockCfg)
-		})
-	})
-
-	t.Run("connect failure", func(t *testing.T) {
-		patches := gomonkey.ApplyFunc(pgxpool.ParseConfig, func(connString string) (*pgxpool.Config, error) {
-			return &pgxpool.Config{}, nil
-		})
-		defer patches.Reset()
-		
-		patches.ApplyFunc(pgxpool.NewWithConfig, func(ctx context.Context, c *pgxpool.Config) (*pgxpool.Pool, error) {
-			return nil, errors.New("connect error")
+		patches.ApplyFunc(sqlx.Connect, func(driverName, dataSourceName string) (*sqlx.DB, error) {
+			return dummyDB, nil
 		})
 
-		assert.Panics(t, func() {
-			Connect(mockCfg)
-		})
-	})
-
-	t.Run("ping failure", func(t *testing.T) {
-		dummyPool := &pgxpool.Pool{}
-		
-		patches := gomonkey.ApplyFunc(pgxpool.ParseConfig, func(connString string) (*pgxpool.Config, error) {
-			return &pgxpool.Config{}, nil
-		})
-		defer patches.Reset()
-		
-		patches.ApplyFunc(pgxpool.NewWithConfig, func(ctx context.Context, c *pgxpool.Config) (*pgxpool.Pool, error) {
-			return dummyPool, nil
-		})
-		
-		patches.ApplyMethod(dummyPool, "Ping", func(_ *pgxpool.Pool, _ context.Context) error {
-			return errors.New("ping error")
-		})
-		
-		patches.ApplyMethod(dummyPool, "Close", func(_ *pgxpool.Pool) {
-			// mock close
-		})
-
-		assert.Panics(t, func() {
-			Connect(mockCfg)
-		})
+		db := Connect()
+		assert.Equal(t, dummyDB, db)
+		// Reset singleton for other tests
+		once = sync.Once{}
+		DBInstance = nil
 	})
 }

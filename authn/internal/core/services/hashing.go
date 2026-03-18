@@ -1,11 +1,11 @@
-package service
+package services
 
 import (
 	"context"
 
 	"crypto/sha256"
 
-	inboundport "github.com/faber-numeris/luciole-auth/authn/internal/app/ports/inbound"
+	inboundport "github.com/faber-numeris/luciole-auth/authn/internal/ports/inbound"
 )
 
 type hashingService struct{}

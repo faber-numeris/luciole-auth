@@ -1,15 +1,15 @@
-package service_test
+package services_test
 
 import (
 	"context"
 	"testing"
 
-	"github.com/faber-numeris/luciole-auth/authn/internal/app/service"
+	"github.com/faber-numeris/luciole-auth/authn/internal/core/services"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestHashingService(t *testing.T) {
-	s := service.NewHashingService()
+	s := services.NewHashingService()
 	ctx := context.Background()
 
 	t.Run("HashPassword success", func(t *testing.T) {

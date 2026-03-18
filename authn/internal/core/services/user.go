@@ -1,4 +1,4 @@
-package service
+package services
 
 import (
 	"bytes"
@@ -10,8 +10,8 @@ import (
 	"log/slog"
 	"time"
 
-	inboundport "github.com/faber-numeris/luciole-auth/authn/internal/app/ports/inbound"
-	outboundport "github.com/faber-numeris/luciole-auth/authn/internal/app/ports/outbound"
+	inboundport "github.com/faber-numeris/luciole-auth/authn/internal/ports/inbound"
+	outboundport "github.com/faber-numeris/luciole-auth/authn/internal/ports/outbound"
 	"github.com/faber-numeris/luciole-auth/authn/internal/domain"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
