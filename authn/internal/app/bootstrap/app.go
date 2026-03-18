@@ -1,4 +1,4 @@
-package main
+package bootstrap
 
 import (
 	"context"
@@ -14,11 +14,9 @@ import (
 	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/inbound/httpapi"
 	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/inbound/httpapi/gen"
 	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/outbound/mail"
-	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/outbound/postgres"
-	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/outbound/postgres/gen"
-	"github.com/faber-numeris/luciole-auth/authn/internal/app"
+	"github.com/faber-numeris/luciole-auth/authn/internal/app/service"
 	"github.com/faber-numeris/luciole-auth/authn/internal/infrastructure/config"
-	infra_postgres "github.com/faber-numeris/luciole-auth/authn/internal/infrastructure/postgres"
+	"github.com/faber-numeris/luciole-auth/authn/internal/infrastructure/postgres"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
@@ -27,26 +25,15 @@ import (
 
 type App struct {
 	server *http.Server
-	pool   interface {
-		Close()
-	}
+	pool   postgres.DBPool
 }
 
 func NewApp() *App {
-	cfg, err := config.Load()
-	if err != nil {
-		panic(fmt.Errorf("failed to load configuration: %w", err))
-	}
-
-	pool := infra_postgres.Connect(cfg)
-
-	userRepo := postgresadapter.NewUserRepository(gen.New(pool))
-	confirmationRepo := postgresadapter.NewUserConfirmationRepository(gen.New(pool))
-	mailer := mail.NewService(cfg)
-
-	hashingSvc := app.NewHashingService()
-	userSvc := app.NewUserService(userRepo, confirmationRepo, hashingSvc, mailer)
-	encryptionSvc := app.NewEncryptionService(cfg)
+	mailer := mail.NewService()
+	hashingSvc := ProvideHashingService()
+	repo := ProvideRepository()
+	userSvc := service.NewUserService(repo, hashingSvc, mailer)
+	encryptionSvc := service.NewEncryptionService()
 
 	handler := httpapi.NewHandler(userSvc, hashingSvc, encryptionSvc)
 	security := httpapi.NewSecurityHandler()
@@ -56,19 +43,20 @@ func NewApp() *App {
 		panic(fmt.Errorf("failed to create server: %w", err))
 	}
 
-	router := buildRouter(cfg, srv)
+	router := buildRouter(srv)
 
-	address := fmt.Sprintf(":%d", cfg.Port())
+	address := fmt.Sprintf(":%d", config.LoadConfig().Port())
 	return &App{
 		server: &http.Server{
 			Addr:    address,
 			Handler: router,
 		},
-		pool: pool,
+		pool: postgres.Connect(),
 	}
 }
 
-func buildRouter(cfg config.IAppConfig, srv *api.Server) http.Handler {
+func buildRouter(srv *api.Server) http.Handler {
+	cfg := config.LoadConfig()
 	specuiHandler := specui.NewHandler(
 		specui.WithTitle("Luciole Auth API"),
 		specui.WithDocsPath("/docs/authn"),

@@ -1,4 +1,4 @@
-package app
+package service
 
 import (
 	"context"
@@ -19,6 +19,6 @@ func (s *hashingService) HashPassword(ctx context.Context, password []byte) ([]b
 	h := sha256.New()
 	h.Write(password)
 	hash := h.Sum(nil)
-	
+
 	return hash, nil
 }
