@@ -173,7 +173,7 @@ func (h *Handler) RegisterUser(ctx context.Context, req *api.UserCreateRequest) 
 		return errorResponse, nil
 	}
 
-	userResponse, err := h.userService.RegisterUser(ctx, &userModel, req.Password)
+	userResponse, err := h.userService.RegisterUser(ctx, &userModel, []byte(req.Password))
 	if err != nil {
 		if errors.Is(err, domain.ErrUserAlreadyExists) {
 			return &api.RegisterUserConflict{

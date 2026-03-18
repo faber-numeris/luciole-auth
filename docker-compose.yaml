@@ -40,5 +40,25 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  fake-user-generator:
+    build: ./fake-user-data
+    container_name: fake_user_generator
+    volumes:
+      - fake_user_data:/data
+
+  fake-user-api:
+    build:
+      context: ./fake-user-data
+      dockerfile: Dockerfile.api
+    container_name: fake_user_api
+    ports:
+      - "3001:3001"
+    volumes:
+      - fake_user_data:/data
+    depends_on:
+      fake-user-generator:
+        condition: service_completed_successfully
+
 volumes:
   postgres_data:
+  fake_user_data:

@@ -22,25 +22,27 @@ func (_m *MockHashingService) EXPECT() *MockHashingService_Expecter {
 }
 
 // HashPassword provides a mock function with given fields: ctx, password
-func (_m *MockHashingService) HashPassword(ctx context.Context, password string) (string, error) {
+func (_m *MockHashingService) HashPassword(ctx context.Context, password []byte) ([]byte, error) {
 	ret := _m.Called(ctx, password)
 
 	if len(ret) == 0 {
 		panic("no return value specified for HashPassword")
 	}
 
-	var r0 string
+	var r0 []byte
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, string) (string, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []byte) ([]byte, error)); ok {
 		return rf(ctx, password)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []byte) []byte); ok {
 		r0 = rf(ctx, password)
 	} else {
-		r0 = ret.Get(0).(string)
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]byte)
+		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, []byte) error); ok {
 		r1 = rf(ctx, password)
 	} else {
 		r1 = ret.Error(1)
@@ -56,24 +58,24 @@ type MockHashingService_HashPassword_Call struct {
 
 // HashPassword is a helper method to define mock.On call
 //   - ctx context.Context
-//   - password string
+//   - password []byte
 func (_e *MockHashingService_Expecter) HashPassword(ctx interface{}, password interface{}) *MockHashingService_HashPassword_Call {
 	return &MockHashingService_HashPassword_Call{Call: _e.mock.On("HashPassword", ctx, password)}
 }
 
-func (_c *MockHashingService_HashPassword_Call) Run(run func(ctx context.Context, password string)) *MockHashingService_HashPassword_Call {
+func (_c *MockHashingService_HashPassword_Call) Run(run func(ctx context.Context, password []byte)) *MockHashingService_HashPassword_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(string))
+		run(args[0].(context.Context), args[1].([]byte))
 	})
 	return _c
 }
 
-func (_c *MockHashingService_HashPassword_Call) Return(_a0 string, _a1 error) *MockHashingService_HashPassword_Call {
+func (_c *MockHashingService_HashPassword_Call) Return(_a0 []byte, _a1 error) *MockHashingService_HashPassword_Call {
 	_c.Call.Return(_a0, _a1)
 	return _c
 }
 
-func (_c *MockHashingService_HashPassword_Call) RunAndReturn(run func(context.Context, string) (string, error)) *MockHashingService_HashPassword_Call {
+func (_c *MockHashingService_HashPassword_Call) RunAndReturn(run func(context.Context, []byte) ([]byte, error)) *MockHashingService_HashPassword_Call {
 	_c.Call.Return(run)
 	return _c
 }

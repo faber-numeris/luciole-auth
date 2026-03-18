@@ -15,8 +15,8 @@ http:
     type: json
     data: |-
       {
-        "email": "<email>",
-        "password": "<string>"
+        "email": "{{email}}",
+        "password": "{{password}}"
       }
   auth: inherit
 

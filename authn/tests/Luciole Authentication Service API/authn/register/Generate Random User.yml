@@ -5,24 +5,17 @@ info:
 
 http:
   method: GET
-  url: https://randomuser.me/api/?nat=ca&inc=gender,name,nat,email
-  params:
-    - name: nat
-      value: ca
-      type: query
-    - name: inc
-      value: gender,name,nat,email
-      type: query
+  url: http://localhost:3001/users
   auth: inherit
 
 runtime:
   scripts:
     - type: after-response
       code: |-
-        var data = res.body.results[0]
+        var data = res.body[0]
         bru.setVar("email",data.email)
-        bru.setVar("firstName", data.name.first)
-        bru.setVar("lastName", data.name.first)
+        bru.setVar("firstName", data.firstName)
+        bru.setVar("lastName", data.lastName)
 
         const length = 12;
         const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+";

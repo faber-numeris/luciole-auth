@@ -5,5 +5,5 @@ import (
 )
 
 type HashingService interface {
-	HashPassword(ctx context.Context, password string) (string, error)
+	HashPassword(ctx context.Context, password []byte) ([]byte, error)
 }

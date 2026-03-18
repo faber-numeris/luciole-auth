@@ -50,7 +50,7 @@ func TestHandler_RegisterUser(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		userService := mocks.NewMockUserService(t)
 		handler := NewHandler(userService, nil, nil)
-		userService.EXPECT().RegisterUser(ctx, mock.Anything, "password").
+		userService.EXPECT().RegisterUser(ctx, mock.Anything, []byte("password")).
 			Return(&domain.User{ID: "123", Email: "test@example.com"}, nil)
 
 		res, err := handler.RegisterUser(ctx, req)
@@ -62,7 +62,7 @@ func TestHandler_RegisterUser(t *testing.T) {
 	t.Run("error", func(t *testing.T) {
 		userService := mocks.NewMockUserService(t)
 		handler := NewHandler(userService, nil, nil)
-		userService.EXPECT().RegisterUser(ctx, mock.Anything, "password").
+		userService.EXPECT().RegisterUser(ctx, mock.Anything, []byte("password")).
 			Return(nil, errors.New("db error"))
 
 		res, err := handler.RegisterUser(ctx, req)
@@ -74,7 +74,7 @@ func TestHandler_RegisterUser(t *testing.T) {
 	t.Run("converter error", func(t *testing.T) {
 		userService := mocks.NewMockUserService(t)
 		handler := NewHandler(userService, nil, nil)
-		userService.EXPECT().RegisterUser(ctx, mock.Anything, "password").
+		userService.EXPECT().RegisterUser(ctx, mock.Anything, []byte("password")).
 			Return(&domain.User{ID: "123"}, nil)
 
 		patches := gomonkey.ApplyMethod(&converterImpl, "UserModelToApiUser", func(_ *generated.ConverterImpl, _ domain.User) (api.User, error) {

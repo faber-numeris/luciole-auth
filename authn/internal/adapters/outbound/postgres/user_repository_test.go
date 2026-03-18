@@ -17,7 +17,7 @@ import (
 func TestUserRepository_CreateUser(t *testing.T) {
 	ctx := context.Background()
 	user := &domain.User{Email: "test@example.com"}
-	passwordHash := "hashed"
+	passwordHash := []byte("hashed")
 
 	t.Run("success", func(t *testing.T) {
 		querier := mocks.NewMockQuerier(t)

@@ -41,7 +41,7 @@ func NewUserService(
 }
 
 // RegisterUser creates a new user account
-func (s *userService) RegisterUser(ctx context.Context, user *domain.User, password string) (*domain.User, error) {
+func (s *userService) RegisterUser(ctx context.Context, user *domain.User, password []byte) (*domain.User, error) {
 	slog.Info("Registering new user", "user", user.Email)
 	passwordHash, err := s.hashingService.HashPassword(ctx, password)
 	if err != nil {
@@ -248,7 +248,13 @@ func (s *userService) VerifyPassword(ctx context.Context, email string, password
 		return nil, domain.ErrInvalidCredentials
 	}
 
-	if !(user.Email == email && bytes.Equal(user.PasswordHash, password)) {
+	passwordHash, err := s.hashingService.HashPassword(ctx, password)
+	if err != nil {
+		slog.Error("Failed to hash password", "email", email, "error", err)
+		return nil, domain.ErrInvalidCredentials
+	}
+
+	if !(user.Email == email && bytes.Equal(user.PasswordHash, passwordHash)) {
 		slog.Error("Email or Password do not match", "email", email, "userEmail", user.Email)
 		return nil, domain.ErrInvalidCredentials
 	}
@@ -259,7 +265,10 @@ func (s *userService) VerifyPassword(ctx context.Context, email string, password
 }
 
 func generateToken() string {
-	bytes := make([]byte, 32)
-	rand.Read(bytes)
-	return hex.EncodeToString(bytes)
+	b := make([]byte, 32)
+	_, err := rand.Read(b)
+	if err != nil {
+		return ""
+	}
+	return hex.EncodeToString(b)
 }

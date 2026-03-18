@@ -18,7 +18,8 @@ type ListUsersParams struct {
 // UserService defines the interface for user business logic operations
 type UserService interface {
 	// RegisterUser creates a new user account
-	RegisterUser(ctx context.Context, user *domain.User, password string) (*domain.User, error)
+	RegisterUser(ctx context.Context, user *domain.User, password []byte) (*domain.User, error)
+
 
 	// GetUserByID retrieves a user by their ID
 	GetUserByID(ctx context.Context, id string) (*domain.User, error)
