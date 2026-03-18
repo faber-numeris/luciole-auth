@@ -19,8 +19,8 @@ func TestUserService_RegisterUser(t *testing.T) {
 	user := &domain.User{
 		Email: "test@example.com",
 	}
-	password := "password123"
-	passwordHash := "hashed_password"
+	password := []byte("password123")
+	passwordHash := []byte("hashed_password")
 
 	t.Run("success", func(t *testing.T) {
 		userRepo := mocks.NewMockUserRepository(t)
@@ -48,7 +48,7 @@ func TestUserService_RegisterUser(t *testing.T) {
 		hashingService := mocks.NewMockHashingService(t)
 		service := app.NewUserService(nil, nil, hashingService, nil)
 
-		hashingService.EXPECT().HashPassword(ctx, password).Return("", errors.New("hash error"))
+		hashingService.EXPECT().HashPassword(ctx, password).Return(nil, errors.New("hash error"))
 
 		createdUser, err := service.RegisterUser(ctx, user, password)
 
@@ -404,11 +404,16 @@ func TestUserService_VerifyPassword(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		userRepo := mocks.NewMockUserRepository(t)
-		service := app.NewUserService(userRepo, nil, nil, nil)
-		expectedCreds := &domain.UserCredentials{Email: "test@example.com", PasswordHash: []byte("password")}
-		userRepo.EXPECT().GetUserCredentials(ctx, "test@example.com").Return(expectedCreds, nil)
+		hashingService := mocks.NewMockHashingService(t)
+		service := app.NewUserService(userRepo, nil, hashingService, nil)
+		password := []byte("password")
+		passwordHash := []byte("hashed_password")
 
-		user, err := service.VerifyPassword(ctx, "test@example.com", []byte("password"))
+		expectedCreds := &domain.UserCredentials{Email: "test@example.com", PasswordHash: passwordHash}
+		userRepo.EXPECT().GetUserCredentials(ctx, "test@example.com").Return(expectedCreds, nil)
+		hashingService.EXPECT().HashPassword(ctx, password).Return(passwordHash, nil)
+
+		user, err := service.VerifyPassword(ctx, "test@example.com", password)
 
 		assert.NoError(t, err)
 		assert.Equal(t, expectedCreds, user)

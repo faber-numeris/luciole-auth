@@ -25,7 +25,7 @@ func (_m *MockUserRepository) EXPECT() *MockUserRepository_Expecter {
 }
 
 // CreateUser provides a mock function with given fields: ctx, user, passwordHash
-func (_m *MockUserRepository) CreateUser(ctx context.Context, user *domain.User, passwordHash string) (*domain.User, error) {
+func (_m *MockUserRepository) CreateUser(ctx context.Context, user *domain.User, passwordHash []byte) (*domain.User, error) {
 	ret := _m.Called(ctx, user, passwordHash)
 
 	if len(ret) == 0 {
@@ -34,10 +34,10 @@ func (_m *MockUserRepository) CreateUser(ctx context.Context, user *domain.User,
 
 	var r0 *domain.User
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *domain.User, string) (*domain.User, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.User, []byte) (*domain.User, error)); ok {
 		return rf(ctx, user, passwordHash)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *domain.User, string) *domain.User); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.User, []byte) *domain.User); ok {
 		r0 = rf(ctx, user, passwordHash)
 	} else {
 		if ret.Get(0) != nil {
@@ -45,7 +45,7 @@ func (_m *MockUserRepository) CreateUser(ctx context.Context, user *domain.User,
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *domain.User, string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *domain.User, []byte) error); ok {
 		r1 = rf(ctx, user, passwordHash)
 	} else {
 		r1 = ret.Error(1)
@@ -62,14 +62,14 @@ type MockUserRepository_CreateUser_Call struct {
 // CreateUser is a helper method to define mock.On call
 //   - ctx context.Context
 //   - user *domain.User
-//   - passwordHash string
+//   - passwordHash []byte
 func (_e *MockUserRepository_Expecter) CreateUser(ctx interface{}, user interface{}, passwordHash interface{}) *MockUserRepository_CreateUser_Call {
 	return &MockUserRepository_CreateUser_Call{Call: _e.mock.On("CreateUser", ctx, user, passwordHash)}
 }
 
-func (_c *MockUserRepository_CreateUser_Call) Run(run func(ctx context.Context, user *domain.User, passwordHash string)) *MockUserRepository_CreateUser_Call {
+func (_c *MockUserRepository_CreateUser_Call) Run(run func(ctx context.Context, user *domain.User, passwordHash []byte)) *MockUserRepository_CreateUser_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*domain.User), args[2].(string))
+		run(args[0].(context.Context), args[1].(*domain.User), args[2].([]byte))
 	})
 	return _c
 }
@@ -79,7 +79,7 @@ func (_c *MockUserRepository_CreateUser_Call) Return(_a0 *domain.User, _a1 error
 	return _c
 }
 
-func (_c *MockUserRepository_CreateUser_Call) RunAndReturn(run func(context.Context, *domain.User, string) (*domain.User, error)) *MockUserRepository_CreateUser_Call {
+func (_c *MockUserRepository_CreateUser_Call) RunAndReturn(run func(context.Context, *domain.User, []byte) (*domain.User, error)) *MockUserRepository_CreateUser_Call {
 	_c.Call.Return(run)
 	return _c
 }

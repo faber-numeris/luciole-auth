@@ -296,7 +296,7 @@ func (_c *MockUserService_ListUsers_Call) RunAndReturn(run func(context.Context,
 }
 
 // RegisterUser provides a mock function with given fields: ctx, user, password
-func (_m *MockUserService) RegisterUser(ctx context.Context, user *domain.User, password string) (*domain.User, error) {
+func (_m *MockUserService) RegisterUser(ctx context.Context, user *domain.User, password []byte) (*domain.User, error) {
 	ret := _m.Called(ctx, user, password)
 
 	if len(ret) == 0 {
@@ -305,10 +305,10 @@ func (_m *MockUserService) RegisterUser(ctx context.Context, user *domain.User, 
 
 	var r0 *domain.User
 	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context, *domain.User, string) (*domain.User, error)); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.User, []byte) (*domain.User, error)); ok {
 		return rf(ctx, user, password)
 	}
-	if rf, ok := ret.Get(0).(func(context.Context, *domain.User, string) *domain.User); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, *domain.User, []byte) *domain.User); ok {
 		r0 = rf(ctx, user, password)
 	} else {
 		if ret.Get(0) != nil {
@@ -316,7 +316,7 @@ func (_m *MockUserService) RegisterUser(ctx context.Context, user *domain.User, 
 		}
 	}
 
-	if rf, ok := ret.Get(1).(func(context.Context, *domain.User, string) error); ok {
+	if rf, ok := ret.Get(1).(func(context.Context, *domain.User, []byte) error); ok {
 		r1 = rf(ctx, user, password)
 	} else {
 		r1 = ret.Error(1)
@@ -333,14 +333,14 @@ type MockUserService_RegisterUser_Call struct {
 // RegisterUser is a helper method to define mock.On call
 //   - ctx context.Context
 //   - user *domain.User
-//   - password string
+//   - password []byte
 func (_e *MockUserService_Expecter) RegisterUser(ctx interface{}, user interface{}, password interface{}) *MockUserService_RegisterUser_Call {
 	return &MockUserService_RegisterUser_Call{Call: _e.mock.On("RegisterUser", ctx, user, password)}
 }
 
-func (_c *MockUserService_RegisterUser_Call) Run(run func(ctx context.Context, user *domain.User, password string)) *MockUserService_RegisterUser_Call {
+func (_c *MockUserService_RegisterUser_Call) Run(run func(ctx context.Context, user *domain.User, password []byte)) *MockUserService_RegisterUser_Call {
 	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context), args[1].(*domain.User), args[2].(string))
+		run(args[0].(context.Context), args[1].(*domain.User), args[2].([]byte))
 	})
 	return _c
 }
@@ -350,7 +350,7 @@ func (_c *MockUserService_RegisterUser_Call) Return(_a0 *domain.User, _a1 error)
 	return _c
 }
 
-func (_c *MockUserService_RegisterUser_Call) RunAndReturn(run func(context.Context, *domain.User, string) (*domain.User, error)) *MockUserService_RegisterUser_Call {
+func (_c *MockUserService_RegisterUser_Call) RunAndReturn(run func(context.Context, *domain.User, []byte) (*domain.User, error)) *MockUserService_RegisterUser_Call {
 	_c.Call.Return(run)
 	return _c
 }

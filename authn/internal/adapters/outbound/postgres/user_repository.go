@@ -25,10 +25,10 @@ func NewUserRepository(querier gen.Querier) outboundport.UserRepository {
 	}
 }
 
-func (r *userRepository) CreateUser(ctx context.Context, user *domain.User, passwordHash string) (*domain.User, error) {
+func (r *userRepository) CreateUser(ctx context.Context, user *domain.User, passwordHash []byte) (*domain.User, error) {
 	createParams := gen.CreateUserParams{
 		Email:        user.Email,
-		PasswordHash: []byte(passwordHash),
+		PasswordHash: passwordHash,
 	}
 
 	sqlcUser, err := r.querier.CreateUser(ctx, createParams)
