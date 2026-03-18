@@ -1,7 +1,0 @@
-info:
-  name: reset-request
-  type: folder
-  seq: 1
-
-request:
-  auth: inherit
