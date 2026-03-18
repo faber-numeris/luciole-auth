@@ -1,18 +1,23 @@
-package service_test
+package services_test
 
 import (
 	"context"
 	"errors"
 	"testing"
 
-	inboundport "github.com/faber-numeris/luciole-auth/authn/internal/app/ports/inbound"
-	outboundport "github.com/faber-numeris/luciole-auth/authn/internal/app/ports/outbound"
-	"github.com/faber-numeris/luciole-auth/authn/internal/app/service"
+	inboundport "github.com/faber-numeris/luciole-auth/authn/internal/ports/inbound"
+	outboundport "github.com/faber-numeris/luciole-auth/authn/internal/ports/outbound"
+	"github.com/faber-numeris/luciole-auth/authn/internal/core/services"
 	"github.com/faber-numeris/luciole-auth/authn/internal/domain"
 	"github.com/faber-numeris/luciole-auth/authn/internal/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
+
+type combinedRepo struct {
+	*mocks.MockUserRepository
+	*mocks.MockUserConfirmationRepository
+}
 
 func TestUserService_RegisterUser(t *testing.T) {
 	ctx := context.Background()
@@ -25,9 +30,10 @@ func TestUserService_RegisterUser(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		userRepo := mocks.NewMockUserRepository(t)
 		confRepo := mocks.NewMockUserConfirmationRepository(t)
+		repo := &combinedRepo{userRepo, confRepo}
 		mailService := mocks.NewMockMailer(t)
 		hashingService := mocks.NewMockHashingService(t)
-		service := service.NewUserService(userRepo, confRepo, hashingService, mailService)
+		service := services.NewUserService(repo, hashingService, mailService)
 
 		hashingService.EXPECT().HashPassword(ctx, password).Return(passwordHash, nil)
 		userRepo.EXPECT().CreateUser(ctx, user, passwordHash).Return(&domain.User{ID: "user-123", Email: user.Email}, nil)
@@ -46,7 +52,7 @@ func TestUserService_RegisterUser(t *testing.T) {
 
 	t.Run("hashing failure", func(t *testing.T) {
 		hashingService := mocks.NewMockHashingService(t)
-		service := service.NewUserService(nil, nil, hashingService, nil)
+		service := services.NewUserService(nil, hashingService, nil)
 
 		hashingService.EXPECT().HashPassword(ctx, password).Return(nil, errors.New("hash error"))
 
@@ -59,8 +65,9 @@ func TestUserService_RegisterUser(t *testing.T) {
 
 	t.Run("create user failure", func(t *testing.T) {
 		userRepo := mocks.NewMockUserRepository(t)
+		repo := &combinedRepo{userRepo, nil}
 		hashingService := mocks.NewMockHashingService(t)
-		service := service.NewUserService(userRepo, nil, hashingService, nil)
+		service := services.NewUserService(repo, hashingService, nil)
 
 		hashingService.EXPECT().HashPassword(ctx, password).Return(passwordHash, nil)
 		userRepo.EXPECT().CreateUser(ctx, user, passwordHash).Return(nil, errors.New("db error"))
@@ -75,8 +82,9 @@ func TestUserService_RegisterUser(t *testing.T) {
 	t.Run("confirmation creation failure", func(t *testing.T) {
 		userRepo := mocks.NewMockUserRepository(t)
 		confRepo := mocks.NewMockUserConfirmationRepository(t)
+		repo := &combinedRepo{userRepo, confRepo}
 		hashingService := mocks.NewMockHashingService(t)
-		service := service.NewUserService(userRepo, confRepo, hashingService, nil)
+		service := services.NewUserService(repo, hashingService, nil)
 
 		hashingService.EXPECT().HashPassword(ctx, password).Return(passwordHash, nil)
 		userRepo.EXPECT().CreateUser(ctx, user, passwordHash).Return(&domain.User{ID: "user-123", Email: user.Email}, nil)
@@ -93,9 +101,10 @@ func TestUserService_RegisterUser(t *testing.T) {
 	t.Run("mail failure", func(t *testing.T) {
 		userRepo := mocks.NewMockUserRepository(t)
 		confRepo := mocks.NewMockUserConfirmationRepository(t)
+		repo := &combinedRepo{userRepo, confRepo}
 		mailService := mocks.NewMockMailer(t)
 		hashingService := mocks.NewMockHashingService(t)
-		service := service.NewUserService(userRepo, confRepo, hashingService, mailService)
+		service := services.NewUserService(repo, hashingService, mailService)
 
 		hashingService.EXPECT().HashPassword(ctx, password).Return(passwordHash, nil)
 		userRepo.EXPECT().CreateUser(ctx, user, passwordHash).Return(&domain.User{ID: "user-123", Email: user.Email}, nil)
@@ -116,7 +125,8 @@ func TestUserService_GetUserByID(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		userRepo := mocks.NewMockUserRepository(t)
-		service := service.NewUserService(userRepo, nil, nil, nil)
+		repo := &combinedRepo{userRepo, nil}
+		service := services.NewUserService(repo, nil, nil)
 		expectedUser := &domain.User{ID: "user-123"}
 		userRepo.EXPECT().GetUserByID(ctx, "user-123").Return(expectedUser, nil)
 
@@ -128,7 +138,8 @@ func TestUserService_GetUserByID(t *testing.T) {
 
 	t.Run("not found", func(t *testing.T) {
 		userRepo := mocks.NewMockUserRepository(t)
-		service := service.NewUserService(userRepo, nil, nil, nil)
+		repo := &combinedRepo{userRepo, nil}
+		service := services.NewUserService(repo, nil, nil)
 		userRepo.EXPECT().GetUserByID(ctx, "non-existent").Return(nil, nil)
 
 		user, err := service.GetUserByID(ctx, "non-existent")
@@ -139,7 +150,8 @@ func TestUserService_GetUserByID(t *testing.T) {
 
 	t.Run("error", func(t *testing.T) {
 		userRepo := mocks.NewMockUserRepository(t)
-		service := service.NewUserService(userRepo, nil, nil, nil)
+		repo := &combinedRepo{userRepo, nil}
+		service := services.NewUserService(repo, nil, nil)
 		userRepo.EXPECT().GetUserByID(ctx, "error-id").Return(nil, errors.New("db error"))
 
 		user, err := service.GetUserByID(ctx, "error-id")
@@ -154,7 +166,8 @@ func TestUserService_GetUserByEmail(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		userRepo := mocks.NewMockUserRepository(t)
-		service := service.NewUserService(userRepo, nil, nil, nil)
+		repo := &combinedRepo{userRepo, nil}
+		service := services.NewUserService(repo, nil, nil)
 		expectedUser := &domain.User{Email: "test@example.com"}
 		userRepo.EXPECT().GetUserByEmail(ctx, "test@example.com").Return(expectedUser, nil)
 
@@ -166,7 +179,8 @@ func TestUserService_GetUserByEmail(t *testing.T) {
 
 	t.Run("not found", func(t *testing.T) {
 		userRepo := mocks.NewMockUserRepository(t)
-		service := service.NewUserService(userRepo, nil, nil, nil)
+		repo := &combinedRepo{userRepo, nil}
+		service := services.NewUserService(repo, nil, nil)
 		userRepo.EXPECT().GetUserByEmail(ctx, "unknown").Return(nil, nil)
 
 		user, err := service.GetUserByEmail(ctx, "unknown")
@@ -177,7 +191,8 @@ func TestUserService_GetUserByEmail(t *testing.T) {
 
 	t.Run("error", func(t *testing.T) {
 		userRepo := mocks.NewMockUserRepository(t)
-		service := service.NewUserService(userRepo, nil, nil, nil)
+		repo := &combinedRepo{userRepo, nil}
+		service := services.NewUserService(repo, nil, nil)
 		userRepo.EXPECT().GetUserByEmail(ctx, "error").Return(nil, errors.New("db error"))
 
 		user, err := service.GetUserByEmail(ctx, "error")
@@ -192,7 +207,8 @@ func TestUserService_ConfirmUserRegistration(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		confRepo := mocks.NewMockUserConfirmationRepository(t)
-		service := service.NewUserService(nil, confRepo, nil, nil)
+		repo := &combinedRepo{nil, confRepo}
+		service := services.NewUserService(repo, nil, nil)
 		confRepo.EXPECT().GetUserConfirmationByToken(ctx, "valid-token").Return("user-123", nil)
 		confRepo.EXPECT().ConfirmUserRegistration(ctx, "user-123").Return(nil)
 
@@ -203,7 +219,8 @@ func TestUserService_ConfirmUserRegistration(t *testing.T) {
 
 	t.Run("invalid token", func(t *testing.T) {
 		confRepo := mocks.NewMockUserConfirmationRepository(t)
-		service := service.NewUserService(nil, confRepo, nil, nil)
+		repo := &combinedRepo{nil, confRepo}
+		service := services.NewUserService(repo, nil, nil)
 		confRepo.EXPECT().GetUserConfirmationByToken(ctx, "invalid-token").Return("", nil)
 
 		err := service.ConfirmUserRegistration(ctx, "invalid-token")
@@ -214,7 +231,8 @@ func TestUserService_ConfirmUserRegistration(t *testing.T) {
 
 	t.Run("token retrieval error", func(t *testing.T) {
 		confRepo := mocks.NewMockUserConfirmationRepository(t)
-		service := service.NewUserService(nil, confRepo, nil, nil)
+		repo := &combinedRepo{nil, confRepo}
+		service := services.NewUserService(repo, nil, nil)
 		confRepo.EXPECT().GetUserConfirmationByToken(ctx, "error-token").Return("", errors.New("db error"))
 
 		err := service.ConfirmUserRegistration(ctx, "error-token")
@@ -224,7 +242,8 @@ func TestUserService_ConfirmUserRegistration(t *testing.T) {
 
 	t.Run("confirmation error", func(t *testing.T) {
 		confRepo := mocks.NewMockUserConfirmationRepository(t)
-		service := service.NewUserService(nil, confRepo, nil, nil)
+		repo := &combinedRepo{nil, confRepo}
+		service := services.NewUserService(repo, nil, nil)
 		confRepo.EXPECT().GetUserConfirmationByToken(ctx, "valid-token").Return("user-123", nil)
 		confRepo.EXPECT().ConfirmUserRegistration(ctx, "user-123").Return(errors.New("db error"))
 
@@ -239,7 +258,8 @@ func TestUserService_UpdateUserProfile(t *testing.T) {
 
 	t.Run("success with all fields", func(t *testing.T) {
 		userRepo := mocks.NewMockUserRepository(t)
-		service := service.NewUserService(userRepo, nil, nil, nil)
+		repo := &combinedRepo{userRepo, nil}
+		service := services.NewUserService(repo, nil, nil)
 		existingUser := &domain.User{
 			ID: "user-123",
 			Profile: &domain.UserProfile{
@@ -275,7 +295,8 @@ func TestUserService_UpdateUserProfile(t *testing.T) {
 
 	t.Run("success with missing profile in existing", func(t *testing.T) {
 		userRepo := mocks.NewMockUserRepository(t)
-		service := service.NewUserService(userRepo, nil, nil, nil)
+		repo := &combinedRepo{userRepo, nil}
+		service := services.NewUserService(repo, nil, nil)
 		existingUser := &domain.User{ID: "user-123", Profile: nil}
 		updateReq := &domain.User{Profile: &domain.UserProfile{FirstName: "New"}}
 
@@ -290,7 +311,8 @@ func TestUserService_UpdateUserProfile(t *testing.T) {
 
 	t.Run("user not found", func(t *testing.T) {
 		userRepo := mocks.NewMockUserRepository(t)
-		service := service.NewUserService(userRepo, nil, nil, nil)
+		repo := &combinedRepo{userRepo, nil}
+		service := services.NewUserService(repo, nil, nil)
 		userRepo.EXPECT().GetUserByID(ctx, "unknown").Return(nil, nil)
 
 		updatedUser, err := service.UpdateUserProfile(ctx, "unknown", &domain.User{})
@@ -301,7 +323,8 @@ func TestUserService_UpdateUserProfile(t *testing.T) {
 
 	t.Run("get user error", func(t *testing.T) {
 		userRepo := mocks.NewMockUserRepository(t)
-		service := service.NewUserService(userRepo, nil, nil, nil)
+		repo := &combinedRepo{userRepo, nil}
+		service := services.NewUserService(repo, nil, nil)
 		userRepo.EXPECT().GetUserByID(ctx, "error").Return(nil, errors.New("db error"))
 
 		updatedUser, err := service.UpdateUserProfile(ctx, "error", &domain.User{})
@@ -312,7 +335,8 @@ func TestUserService_UpdateUserProfile(t *testing.T) {
 
 	t.Run("update user error", func(t *testing.T) {
 		userRepo := mocks.NewMockUserRepository(t)
-		service := service.NewUserService(userRepo, nil, nil, nil)
+		repo := &combinedRepo{userRepo, nil}
+		service := services.NewUserService(repo, nil, nil)
 		userRepo.EXPECT().GetUserByID(ctx, "user-123").Return(&domain.User{ID: "user-123"}, nil)
 		userRepo.EXPECT().UpdateUser(ctx, mock.Anything).Return(errors.New("db error"))
 
@@ -328,7 +352,8 @@ func TestUserService_DeleteUser(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		userRepo := mocks.NewMockUserRepository(t)
-		service := service.NewUserService(userRepo, nil, nil, nil)
+		repo := &combinedRepo{userRepo, nil}
+		service := services.NewUserService(repo, nil, nil)
 		userRepo.EXPECT().GetUserByID(ctx, "user-123").Return(&domain.User{ID: "user-123"}, nil)
 		userRepo.EXPECT().DeleteUser(ctx, "user-123").Return(nil)
 
@@ -339,7 +364,8 @@ func TestUserService_DeleteUser(t *testing.T) {
 
 	t.Run("not found", func(t *testing.T) {
 		userRepo := mocks.NewMockUserRepository(t)
-		service := service.NewUserService(userRepo, nil, nil, nil)
+		repo := &combinedRepo{userRepo, nil}
+		service := services.NewUserService(repo, nil, nil)
 		userRepo.EXPECT().GetUserByID(ctx, "unknown").Return(nil, nil)
 
 		err := service.DeleteUser(ctx, "unknown")
@@ -349,7 +375,8 @@ func TestUserService_DeleteUser(t *testing.T) {
 
 	t.Run("get user error", func(t *testing.T) {
 		userRepo := mocks.NewMockUserRepository(t)
-		service := service.NewUserService(userRepo, nil, nil, nil)
+		repo := &combinedRepo{userRepo, nil}
+		service := services.NewUserService(repo, nil, nil)
 		userRepo.EXPECT().GetUserByID(ctx, "error").Return(nil, errors.New("db error"))
 
 		err := service.DeleteUser(ctx, "error")
@@ -359,7 +386,8 @@ func TestUserService_DeleteUser(t *testing.T) {
 
 	t.Run("delete error", func(t *testing.T) {
 		userRepo := mocks.NewMockUserRepository(t)
-		service := service.NewUserService(userRepo, nil, nil, nil)
+		repo := &combinedRepo{userRepo, nil}
+		service := services.NewUserService(repo, nil, nil)
 		userRepo.EXPECT().GetUserByID(ctx, "user-123").Return(&domain.User{ID: "user-123"}, nil)
 		userRepo.EXPECT().DeleteUser(ctx, "user-123").Return(errors.New("db error"))
 
@@ -374,7 +402,8 @@ func TestUserService_ListUsers(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		userRepo := mocks.NewMockUserRepository(t)
-		service := service.NewUserService(userRepo, nil, nil, nil)
+		repo := &combinedRepo{userRepo, nil}
+		service := services.NewUserService(repo, nil, nil)
 		params := &inboundport.ListUsersParams{Active: true}
 		expectedUsers := []*domain.User{{ID: "1"}, {ID: "2"}}
 		userRepo.EXPECT().ListUsers(ctx, mock.MatchedBy(func(p *outboundport.ListUsersParams) bool {
@@ -389,7 +418,8 @@ func TestUserService_ListUsers(t *testing.T) {
 
 	t.Run("error", func(t *testing.T) {
 		userRepo := mocks.NewMockUserRepository(t)
-		service := service.NewUserService(userRepo, nil, nil, nil)
+		repo := &combinedRepo{userRepo, nil}
+		service := services.NewUserService(repo, nil, nil)
 		userRepo.EXPECT().ListUsers(ctx, mock.Anything).Return(nil, errors.New("db error"))
 
 		users, err := service.ListUsers(ctx, &inboundport.ListUsersParams{})
@@ -404,8 +434,9 @@ func TestUserService_VerifyPassword(t *testing.T) {
 
 	t.Run("success", func(t *testing.T) {
 		userRepo := mocks.NewMockUserRepository(t)
+		repo := &combinedRepo{userRepo, nil}
 		hashingService := mocks.NewMockHashingService(t)
-		service := service.NewUserService(userRepo, nil, hashingService, nil)
+		service := services.NewUserService(repo, hashingService, nil)
 		password := []byte("password")
 		passwordHash := []byte("hashed_password")
 
@@ -421,7 +452,8 @@ func TestUserService_VerifyPassword(t *testing.T) {
 
 	t.Run("user not found", func(t *testing.T) {
 		userRepo := mocks.NewMockUserRepository(t)
-		service := service.NewUserService(userRepo, nil, nil, nil)
+		repo := &combinedRepo{userRepo, nil}
+		service := services.NewUserService(repo, nil, nil)
 		userRepo.EXPECT().GetUserCredentials(ctx, "unknown@example.com").Return(nil, nil)
 
 		user, err := service.VerifyPassword(ctx, "unknown@example.com", []byte("password"))
@@ -433,7 +465,8 @@ func TestUserService_VerifyPassword(t *testing.T) {
 
 	t.Run("db error", func(t *testing.T) {
 		userRepo := mocks.NewMockUserRepository(t)
-		service := service.NewUserService(userRepo, nil, nil, nil)
+		repo := &combinedRepo{userRepo, nil}
+		service := services.NewUserService(repo, nil, nil)
 		userRepo.EXPECT().GetUserCredentials(ctx, "error").Return(nil, errors.New("db error"))
 
 		user, err := service.VerifyPassword(ctx, "error", []byte("password"))
@@ -444,14 +477,14 @@ func TestUserService_VerifyPassword(t *testing.T) {
 }
 
 func TestUserService_RequestPasswordReset(t *testing.T) {
-	service := service.NewUserService(nil, nil, nil, nil)
+	service := services.NewUserService(nil, nil, nil)
 	_, err := service.RequestPasswordReset(context.Background(), "email")
 	assert.Error(t, err)
 	assert.Equal(t, "not implemented", err.Error())
 }
 
 func TestUserService_ResetPassword(t *testing.T) {
-	service := service.NewUserService(nil, nil, nil, nil)
+	service := services.NewUserService(nil, nil, nil)
 	err := service.ResetPassword(context.Background(), "token", []byte("new"))
 	assert.Error(t, err)
 	assert.Equal(t, "not implemented", err.Error())

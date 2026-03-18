@@ -5,7 +5,7 @@ package mocks
 import (
 	context "context"
 
-	inboundport "github.com/faber-numeris/luciole-auth/authn/internal/app/ports/inbound"
+	inboundport "github.com/faber-numeris/luciole-auth/authn/internal/ports/inbound"
 	domain "github.com/faber-numeris/luciole-auth/authn/internal/domain"
 
 	mock "github.com/stretchr/testify/mock"

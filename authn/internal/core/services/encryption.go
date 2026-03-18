@@ -1,9 +1,9 @@
-package service
+package services
 
 import (
 	"context"
 
-	inboundport "github.com/faber-numeris/luciole-auth/authn/internal/app/ports/inbound"
+	inboundport "github.com/faber-numeris/luciole-auth/authn/internal/ports/inbound"
 )
 
 type encryptionService struct {

@@ -5,50 +5,46 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/outbound/postgres/gen"
-	outboundport "github.com/faber-numeris/luciole-auth/authn/internal/app/ports/outbound"
 	"github.com/faber-numeris/luciole-auth/authn/internal/domain"
-	"github.com/faber-numeris/luciole-auth/authn/internal/platform/mapper/generated"
+	outboundport "github.com/faber-numeris/luciole-auth/authn/internal/ports/outbound"
 	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jmoiron/sqlx"
 )
 
 type userRepository struct {
-	querier gen.Querier
+	db *sqlx.DB
 }
 
-var conversion = generated.ConverterImpl{}
-
-func NewUserRepository(querier gen.Querier) outboundport.UserRepository {
+func NewUserRepository(db *sqlx.DB) outboundport.UserRepository {
 	return &userRepository{
-		querier: querier,
+		db: db,
 	}
 }
 
 func (r *userRepository) CreateUser(ctx context.Context, user *domain.User, passwordHash []byte) (*domain.User, error) {
-	createParams := gen.CreateUserParams{
-		Email:        user.Email,
-		PasswordHash: passwordHash,
-	}
+	query := `INSERT INTO users (email, password_hash) VALUES (?, ?) RETURNING id, email, password_hash, first_name, last_name, locale, timezone, created_at, updated_at, deleted_at`
+	query = r.db.Rebind(query)
 
-	sqlcUser, err := r.querier.CreateUser(ctx, createParams)
+	var row userRow
+	err := r.db.GetContext(ctx, &row, query, user.Email, passwordHash)
 	if err != nil {
-		var pgerr *pgconn.PgError
-		if errors.As(err, &pgerr) && pgerrcode.IsIntegrityConstraintViolation(pgerr.Code) {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgerrcode.IsIntegrityConstraintViolation(pgErr.Code) {
 			return nil, domain.ErrUserAlreadyExists
 		}
 		return nil, err
 	}
 
-	result, err := conversion.UserModelFromSQLC(sqlcUser)
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
+	return r.toDomain(row), nil
 }
 
 func (r *userRepository) GetUserByID(ctx context.Context, id string) (*domain.User, error) {
-	sqlcUser, err := r.querier.GetUser(ctx, id)
+	query := `SELECT id, email, password_hash, first_name, last_name, locale, timezone, created_at, updated_at, deleted_at FROM users WHERE id = ? LIMIT 1`
+	query = r.db.Rebind(query)
+
+	var row userRow
+	err := r.db.GetContext(ctx, &row, query, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -56,15 +52,15 @@ func (r *userRepository) GetUserByID(ctx context.Context, id string) (*domain.Us
 		return nil, err
 	}
 
-	result, err := conversion.UserModelFromSQLC(sqlcUser)
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
+	return r.toDomain(row), nil
 }
 
 func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*domain.User, error) {
-	sqlcUser, err := r.querier.GetUserByEmail(ctx, email)
+	query := `SELECT id, email, password_hash, first_name, last_name, locale, timezone, created_at, updated_at, deleted_at FROM users WHERE email = ? AND deleted_at IS NULL LIMIT 1`
+	query = r.db.Rebind(query)
+
+	var row userRow
+	err := r.db.GetContext(ctx, &row, query, email)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, nil
@@ -72,11 +68,29 @@ func (r *userRepository) GetUserByEmail(ctx context.Context, email string) (*dom
 		return nil, err
 	}
 
-	result, err := conversion.UserModelFromSQLC(sqlcUser)
+	return r.toDomain(row), nil
+}
+
+func (r *userRepository) GetUserCredentials(ctx context.Context, email string) (*domain.UserCredentials, error) {
+	query := `SELECT email, password_hash FROM users WHERE email = ? AND deleted_at IS NULL LIMIT 1`
+	query = r.db.Rebind(query)
+
+	var row struct {
+		Email        string `db:"email"`
+		PasswordHash []byte `db:"password_hash"`
+	}
+	err := r.db.GetContext(ctx, &row, query, email)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
 		return nil, err
 	}
-	return &result, nil
+
+	return &domain.UserCredentials{
+		Email:        row.Email,
+		PasswordHash: row.PasswordHash,
+	}, nil
 }
 
 func (r *userRepository) UpdateUser(ctx context.Context, user *domain.User) error {
@@ -88,68 +102,68 @@ func (r *userRepository) UpdateUser(ctx context.Context, user *domain.User) erro
 		timezone = user.Profile.Timezone
 	}
 
-	updateParams := gen.UpdateUserParams{
-		ID:           user.ID,
-		Email:        user.Email,
-		PasswordHash: []byte{},
-		FirstName:    firstName,
-		LastName:     lastName,
-		Locale:       locale,
-		Timezone:     timezone,
-	}
+	query := `UPDATE users SET email = ?, first_name = ?, last_name = ?, locale = ?, timezone = ?, updated_at = NOW() WHERE id = ?`
+	query = r.db.Rebind(query)
 
-	_, err := r.querier.UpdateUser(ctx, updateParams)
+	_, err := r.db.ExecContext(ctx, query, user.Email, firstName, lastName, locale, timezone, user.ID)
 	return err
 }
 
 func (r *userRepository) DeleteUser(ctx context.Context, id string) error {
-	return r.querier.DeleteUser(ctx, id)
+	query := `UPDATE users SET deleted_at = NOW() WHERE id = ?`
+	query = r.db.Rebind(query)
+
+	_, err := r.db.ExecContext(ctx, query, id)
+	return err
 }
 
 func (r *userRepository) ListUsers(ctx context.Context, params *outboundport.ListUsersParams) ([]*domain.User, error) {
-	sqlcParams := gen.ListUsersParams{
-		Active:            params.Active,
-		Email:             params.Email,
-		CreatedStartRange: params.CreatedStartRange,
-		CreatedEndRange:   params.CreatedEndRange,
-	}
+	query := `
+		SELECT id, email, password_hash, first_name, last_name, locale, timezone, created_at, updated_at, deleted_at
+		FROM users
+		WHERE (? IS NULL OR email = ?)
+		  AND (?::TIMESTAMP IS NULL OR created_at >= ?)
+		  AND (?::TIMESTAMP IS NULL OR created_at <= ?)
+		  AND (deleted_at IS NULL) = ?
+	`
+	query = r.db.Rebind(query)
 
-	sqlcUsers, err := r.querier.ListUsers(ctx, sqlcParams)
+	var rows []userRow
+	err := r.db.SelectContext(ctx, &rows, query,
+		params.Email, params.Email,
+		params.CreatedStartRange, params.CreatedStartRange,
+		params.CreatedEndRange, params.CreatedEndRange,
+		params.Active,
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	result := make([]*domain.User, len(sqlcUsers))
-	for i, sqlcUser := range sqlcUsers {
-		res, err := conversion.UserModelFromSQLC(sqlcUser)
-		if err != nil {
-			return nil, err
-		}
-		result[i] = &res
+	result := make([]*domain.User, len(rows))
+	for i, row := range rows {
+		result[i] = r.toDomain(row)
 	}
 
 	return result, nil
 }
 
 func (r *userRepository) UpdatePassword(ctx context.Context, userID string, passwordHash []byte) error {
-	return r.querier.UpdatePassword(ctx, gen.UpdatePasswordParams{
-		Userid:       userID,
-		Passwordhash: passwordHash,
-	})
+	query := `UPDATE users SET password_hash = ?, updated_at = NOW() WHERE id = ?`
+	query = r.db.Rebind(query)
+
+	_, err := r.db.ExecContext(ctx, query, passwordHash, userID)
+	return err
 }
 
-func (r *userRepository) GetUserCredentials(ctx context.Context, email string) (*domain.UserCredentials, error) {
-	sqlcUser, err := r.querier.GetUserByEmail(ctx, email)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
-		}
-		return nil, err
+func (r *userRepository) toDomain(row userRow) *domain.User {
+	return &domain.User{
+		ID:    row.ID,
+		Email: row.Email,
+		Profile: &domain.UserProfile{
+			FirstName: row.FirstName,
+			LastName:  row.LastName,
+			Locale:    row.Locale,
+			Timezone:  row.Timezone,
+		},
 	}
-
-	result, err := conversion.UserCredentialsModelFromSQLC(sqlcUser)
-	if err != nil {
-		return nil, err
-	}
-	return &result, nil
 }

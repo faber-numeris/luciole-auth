@@ -12,28 +12,29 @@ import (
 	"time"
 
 	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/inbound/httpapi"
-	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/inbound/httpapi/gen"
+	api "github.com/faber-numeris/luciole-auth/authn/internal/adapters/inbound/httpapi/gen"
 	"github.com/faber-numeris/luciole-auth/authn/internal/adapters/outbound/mail"
-	"github.com/faber-numeris/luciole-auth/authn/internal/app/service"
+	"github.com/faber-numeris/luciole-auth/authn/internal/core/services"
 	"github.com/faber-numeris/luciole-auth/authn/internal/infrastructure/config"
 	"github.com/faber-numeris/luciole-auth/authn/internal/infrastructure/postgres"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
+	"github.com/jmoiron/sqlx"
 	specui "github.com/oaswrap/spec-ui"
 )
 
 type App struct {
 	server *http.Server
-	pool   postgres.DBPool
+	db     *sqlx.DB
 }
 
 func NewApp() *App {
 	mailer := mail.NewService()
 	hashingSvc := ProvideHashingService()
 	repo := ProvideRepository()
-	userSvc := service.NewUserService(repo, hashingSvc, mailer)
-	encryptionSvc := service.NewEncryptionService()
+	userSvc := services.NewUserService(repo, hashingSvc, mailer)
+	encryptionSvc := services.NewEncryptionService()
 
 	handler := httpapi.NewHandler(userSvc, hashingSvc, encryptionSvc)
 	security := httpapi.NewSecurityHandler()
@@ -45,18 +46,25 @@ func NewApp() *App {
 
 	router := buildRouter(srv)
 
-	address := fmt.Sprintf(":%d", config.LoadConfig().Port())
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		panic(fmt.Errorf("failed to load configuration: %w", err))
+	}
+	address := fmt.Sprintf(":%d", cfg.Port())
 	return &App{
 		server: &http.Server{
 			Addr:    address,
 			Handler: router,
 		},
-		pool: postgres.Connect(),
+		db: postgres.Connect(),
 	}
 }
 
 func buildRouter(srv *api.Server) http.Handler {
-	cfg := config.LoadConfig()
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		panic(fmt.Errorf("failed to load configuration: %w", err))
+	}
 	specuiHandler := specui.NewHandler(
 		specui.WithTitle("Luciole Auth API"),
 		specui.WithDocsPath("/docs/authn"),
@@ -113,7 +121,9 @@ func (a *App) Run() error {
 			return fmt.Errorf("server forced to shutdown: %w", err)
 		}
 
-		a.pool.Close()
+		if err := a.db.Close(); err != nil {
+			slog.Error("failed to close database", "error", err)
+		}
 
 		slog.Info("Server exited")
 	}

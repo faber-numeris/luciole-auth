@@ -1,24 +1,25 @@
 package postgres
 
 import (
-	"context"
 	"fmt"
 	"sync"
 	"time"
 
 	"github.com/faber-numeris/luciole-auth/authn/internal/infrastructure/config"
-	"github.com/jackc/pgx/v5/pgxpool"
+	_ "github.com/jackc/pgx/v5/stdlib"
+	"github.com/jmoiron/sqlx"
 )
 
-var DBPoolInstance DBPool
+var DBInstance *sqlx.DB
 
 var once sync.Once
 
-func Connect() DBPool {
+func Connect() *sqlx.DB {
 	once.Do(func() {
-		ctx := context.Background()
-
-		var cfg config.IDatabaseConfig = config.LoadConfig()
+		cfg, err := config.LoadConfig()
+		if err != nil {
+			panic(fmt.Errorf("failed to load configuration: %w", err))
+		}
 
 		dsn := fmt.Sprintf(
 			"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
@@ -30,30 +31,18 @@ func Connect() DBPool {
 			cfg.DBSSLMode(),
 		)
 
-		poolCfg, err := pgxpool.ParseConfig(dsn)
-		if err != nil {
-			panic(fmt.Errorf("failed to parse db config: %w", err))
-		}
-
-		poolCfg.MaxConns = 10
-		poolCfg.MinConns = 2
-		poolCfg.MaxConnLifetime = time.Hour
-		poolCfg.MaxConnIdleTime = 30 * time.Minute
-		poolCfg.HealthCheckPeriod = time.Minute
-
-		pool, err := pgxpool.NewWithConfig(ctx, poolCfg)
+		db, err := sqlx.Connect("pgx", dsn)
 		if err != nil {
 			panic(fmt.Errorf("failed to connect to db: %w", err))
 		}
 
-		// Always verify connection at startup
-		if err := pool.Ping(ctx); err != nil {
-			pool.Close()
-			panic(fmt.Errorf("failed to ping db: %w", err))
-		}
+		db.SetMaxOpenConns(10)
+		db.SetMaxIdleConns(2)
+		db.SetConnMaxLifetime(time.Hour)
+		db.SetConnMaxIdleTime(30 * time.Minute)
 
-		DBPoolInstance = pool
+		DBInstance = db
 	})
 
-	return DBPoolInstance
+	return DBInstance
 }

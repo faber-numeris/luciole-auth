@@ -3,6 +3,7 @@ module github.com/faber-numeris/luciole-auth
 go 1.24.8
 
 require (
+	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/agiledragon/gomonkey/v2 v2.14.0
 	github.com/caarlos0/env/v11 v11.3.1
 	github.com/go-chi/chi/v5 v5.2.4
@@ -12,6 +13,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgerrcode v0.0.0-20250907135507-afb5586c32a6
 	github.com/jackc/pgx/v5 v5.8.0
+	github.com/jmoiron/sqlx v1.4.0
 	github.com/lmittmann/tint v1.1.2
 	github.com/oaswrap/spec-ui v0.1.4
 	github.com/ogen-go/ogen v1.18.0
@@ -19,7 +21,6 @@ require (
 	go.opentelemetry.io/otel v1.40.0
 	go.opentelemetry.io/otel/metric v1.40.0
 	go.opentelemetry.io/otel/trace v1.40.0
-	golang.org/x/crypto v0.47.0
 )
 
 require (
