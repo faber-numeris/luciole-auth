@@ -1,7 +1,7 @@
 info:
   name: Confirm user registration
   type: http
-  seq: 4
+  seq: 5
 
 http:
   method: GET
@@ -20,111 +20,5 @@ settings:
   timeout: 0
   followRedirects: true
   maxRedirects: 5
-
-examples:
-  - name: User successfully confirmed
-    request:
-      url: http://{{baseUrl}}/authn/confirm?token=<string>
-      method: GET
-      headers:
-        - name: Accept
-          value: application/json
-      params:
-        - name: token
-          value: <string>
-          type: query
-          description: (Required) Confirmation token sent to the user's email
-    response:
-      statusText: "200"
-      headers:
-        - name: Content-Type
-          value: application/json
-      body:
-        type: json
-        data: |-
-          {
-            "message": "<string>"
-          }
-  - name: Invalid or missing token
-    request:
-      url: http://{{baseUrl}}/authn/confirm?token=<string>
-      method: GET
-      headers:
-        - name: Accept
-          value: application/json
-      params:
-        - name: token
-          value: <string>
-          type: query
-          description: (Required) Confirmation token sent to the user's email
-    response:
-      statusText: "400"
-      headers:
-        - name: Content-Type
-          value: application/json
-      body:
-        type: json
-        data: |-
-          {
-            "error": "<string>",
-            "message": "<string>",
-            "details": {
-              "key_0": "string"
-            }
-          }
-  - name: Token expired
-    request:
-      url: http://{{baseUrl}}/authn/confirm?token=<string>
-      method: GET
-      headers:
-        - name: Accept
-          value: application/json
-      params:
-        - name: token
-          value: <string>
-          type: query
-          description: (Required) Confirmation token sent to the user's email
-    response:
-      statusText: "410"
-      headers:
-        - name: Content-Type
-          value: application/json
-      body:
-        type: json
-        data: |-
-          {
-            "error": "<string>",
-            "message": "<string>",
-            "details": {
-              "key_0": "string"
-            }
-          }
-  - name: Internal server error
-    request:
-      url: http://{{baseUrl}}/authn/confirm?token=<string>
-      method: GET
-      headers:
-        - name: Accept
-          value: application/json
-      params:
-        - name: token
-          value: <string>
-          type: query
-          description: (Required) Confirmation token sent to the user's email
-    response:
-      statusText: "500"
-      headers:
-        - name: Content-Type
-          value: application/json
-      body:
-        type: json
-        data: |-
-          {
-            "error": "<string>",
-            "message": "<string>",
-            "details": {
-              "key_0": "string"
-            }
-          }
 
 docs: Confirms a user's email address using a confirmation token
